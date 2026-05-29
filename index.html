@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Educar para Transformar | Institución Educativa</title>
+<style>
+    /* --- PALETA DE COLORES Y ESTILOS BASE --- */
+    
+    :root {
+        --azul-primario: #1b499b;
+        --celeste: #4cb2e4;
+        --verde: #8cc63f;
+        --naranja: #f15a24;
+        --rosa: #ec008c;
+        --violeta: #9e005d;
+        --fondo-claro: #f8f9fa;
+        --texto-oscuro: #333333;
+        --scale: 0.1;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, sans-serif;
+        scroll-behavior: smooth;
+    }
+
+    /* --- SCROLLBAR PERSONALIZADO --- */
+    ::-webkit-scrollbar {
+        width: 14px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: linear-gradient(180deg, #f8f9fa 0%, #e8eef5 100%);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, var(--azul-primario) 0%, var(--celeste) 100%);
+        border-radius: 10px;
+        border: 2px solid #f8f9fa;
+        box-shadow: 0 0 6px rgba(27, 73, 155, 0.3);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, var(--celeste) 0%, var(--azul-primario) 100%);
+        box-shadow: 0 0 10px rgba(27, 73, 155, 0.6);
+    }
+
+    /* Firefox */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--azul-primario) #f8f9fa;
+    }
+
+    body {
+        color: var(--texto-oscuro);
+        background-image: url('img/fondo-blanco.avif');
+        background-size: cover;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+        line-height: 1.6;
+    }
+
+    /* --- NAVEGACIÓN --- */
+    
+    header {
+        /* Leve transparencia y efecto blur en fondos compatibles */
+        /* Fondo en azul institucional con 0.83 de opacidad (5% más transparente que antes) */
+        background-color: rgba(27,73,155,0.83);
+        -webkit-backdrop-filter: blur(6px);
+        backdrop-filter: blur(6px);
+        box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+        position: fixed;
+        top: 0;
+        width: 100%;
+        z-index: 1000;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 5%;
+        transition: background-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .logo-container img {
+        height: 75px;
+        width: auto;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .logo-container h1 {
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    nav ul {
+        list-style: none;
+        display: flex;
+        gap: 30px;
+    }
+
+    nav ul li a {
+        text-decoration: none;
+        color: white;
+        font-weight: 600;
+        transition: color 0.3s;
+    }
+
+    nav ul li a:hover {
+        color: var(--celeste);
+    }
+
+    /* --- SECCIONES GENERALES --- */
+    
+    section {
+        padding: 60px 5% 40px 5%;
+        min-height: 40vh;
+        transform-origin: center top;
+        transform: scaleY(calc(1 - var(--scale)));
+        transition: transform 0.1s ease-out;
+    }
+
+    section > * {
+        transform-origin: center top;
+        transform: scaleY(calc(1 / (1 - var(--scale))));
+    }
+
+    h2 {
+        color: var(--azul-primario);
+        font-size: 2.5rem;
+        text-align: center;
+        margin-bottom: 40px;
+        text-transform: uppercase;
+        border-bottom: 3px solid var(--celeste);
+        display: inline-block;
+        padding-bottom: 10px;
+    }
+
+    .section-center {
+        text-align: center;
+        width: 100%;
+    }
+
+    /* --- SECCIÓN: HERO --- */
+    #hero {
+        height: 100vh;
+        background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("img/colegio.jpg");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: flex-end;
+        color: white;
+        padding-bottom: 80px;
+    }
+    
+    .hero-content {
+        text-align: center;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .btn-hero {
+        display: inline-block;
+        background-color: var(--verde);
+        color: white;
+        padding: 15px 40px;
+        text-decoration: none;
+        font-size: 1.2rem;
+        font-weight: bold;
+        border-radius: 50px;
+        transition: background-color 0.3s;
+        border: none;
+        cursor: pointer;
+    }
+
+    #hero h1{
+        font-size: 2rem;
+        margin-bottom: 25px;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .hero-parrafo {
+        margin-bottom: 40px;
+        line-height: 1.8;
+    }
+
+    /* --- SECCIÓN: QUIÉNES SOMOS (PANTALLA DIVIDIDA) --- */
+    
+    #quienes-somos {
+        background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("img/colegio2.jpg");
+        background-size: cover;
+        transition: background-image 0.5s ease-in-out;
+    }
+
+    /* 1. La orden de dividir la sección al medio */
+    /* 1. La orden de dividir la sección al medio */
+    .quienes-somos-split {
+        display: flex; 
+        align-items: center; 
+        justify-content: space-between; 
+        gap: 60px; /* Un poco más de pasillo entre el texto y las cartas */
+        max-width: 1400px; /* ¡Aumentamos el ancho máximo de 1200 a 1400! */
+        margin: 0 auto; 
+        min-height: 60vh; /* Obliga a la sección a ser más alta */
+    }
+
+    /* 2. Estilos para la columna del texto (Izquierda) */
+    .info-columna {
+        flex: 1; 
+        text-align: left; 
+    }
+
+    /* Ajustes para el texto de la izquierda */
+    #quienes-somos h2 {
+        text-align: left;
+        margin-left: 0;
+        display: block;
+        color: white; /* Agregado para que se lea sobre la foto */
+    }
+
+    .intro-text {
+        font-size: 1.1rem;
+        text-align: left;
+        color: white;
+        line-height: 1.8;
+    }
+
+    /* 3. Estilos para la columna del carrusel (Derecha) */
+    .visual-columna {
+        flex: 1; 
+        display: flex;
+        justify-content: center; 
+    }
+
+    /* --- ESTILOS DEL CARRUSEL --- */
+
+    .carrusel-contenedor {
+        width: 100%; /* Ocupa todo el espacio de su columna derecha */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+    }
+
+    .carrusel-pista {
+        width: 100%;
+        max-width: 600px;
+        position: relative;
+    }
+
+    .carrusel-pista .card {
+        display: none; 
+        background: #fff;
+        padding: 40px; /* ¡Aumentado! Le da mucho más aire interno a la tarjeta */
+        border-radius: 15px; /* Redondeamos un poquito más los bordes para que acompañe el tamaño */
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1); /* Sombra un poquito más pronunciada */
+        border-top: 6px solid var(--azul-primario); /* Línea de color un poco más gruesa */
+        color: var(--texto-oscuro);
+        position: relative;
+    }
+
+    /* Llave maestra para mostrar la tarjeta activa */
+    .carrusel-pista .card.tarjeta-activa {
+        display: block;
+        animation: aparecerSuave 0.5s ease;
+    }
+
+    @keyframes aparecerSuave {
+        from { opacity: 0; transform: scale(0.9); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+   /* Recuperamos los colores de la línea superior para cada tarjeta */
+    .carrusel-pista .card:nth-child(1) { border-color: var(--naranja); }
+    .carrusel-pista .card:nth-child(2) { border-color: var(--verde); }
+    .carrusel-pista .card:nth-child(3) { border-color: var(--celeste); }
+    .carrusel-pista .card:nth-child(4) { border-color: var(--rosa); }
+
+    /* Títulos un poco más grandes */
+    .card h3 {
+        color: var(--azul-primario);
+        margin-bottom: 20px;
+        font-size: 1.6rem; 
+    }
+
+    /* Mantenemos las viñetas en su lugar (¡No se borra!) */
+    .card ul {
+        list-style-type: disc;
+        margin-left: 20px;
+    }
+
+    /* Textos más grandes para leer mejor */
+    .card p, .card ul li {
+        font-size: 1.15rem; 
+        margin-bottom: 12px; 
+    }
+
+    /* Mantenemos la posición para que los botones azules no salgan volando */
+    .card ul li {
+        position: relative; 
+    }
+
+    .btn-flecha {
+        background-color: var(--azul-primario);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        flex-shrink: 0; /* Evita que las flechas se aplasten si falta espacio */
+    }
+
+    .btn-flecha:hover {
+        background-color: var(--celeste);
+    }
+
+    /* --- BOTONES MINI Y MODALES --- */
+
+    .btn-mini {
+        background-color: var(--azul-primario);
+        color: white;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .btn-mini::after, .btn-mini::before {
+        content:"";
+        position: absolute;
+        background-color: white;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .btn-mini::before { width: 12px; height: 2px; }
+    .btn-mini::after { width: 2px; height: 12px; }
+
+    .btn-mini:hover {
+        background-color: var(--celeste);
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 2000;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .modal-activo {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .modal-box {
+        background-color: #ffffff;
+        width: 90%;
+        max-width: 500px;
+        padding: 30px;
+        border-radius: 10px;
+        position: relative; 
+        text-align: center;
+    }
+
+    .modal-box img {
+        width: 100%;
+        height: 250px;
+        object-fit: cover;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+
+    .btn-cerrar {
+        position: absolute;
+        top: -15px;
+        right: -15px;
+        width: 35px;
+        height: 35px;
+        background-color: var(--azul-primario);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+    .btn-cerrar:hover {
+        background-color: var(--naranja);
+        transform: scale(1.1);
+    }
+
+    /* --- SECCIÓN: CONTACTO Y UBICACIÓN --- */
+    .grid-info {
+        display: grid; 
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+        gap: 20px; 
+        margin-top: 30px; 
+    }
+
+    #contacto {
+        color: white;
+    }
+
+    .card2 {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        border-top: 4px solid var(--azul-primario);
+        color: var(--texto-oscuro)
+    }
+
+    .card2:nth-child(1) { border-color: var(--verde); }
+    .card2:nth-child(2) { border-color: var(--naranja); }
+    .card2:nth-child(3) { border-color: var(--violeta); }
+    .card2:nth-child(4) { border-color: blue; }
+    .card2:nth-child(5) { border-color: var(--violeta); }
+
+    .card2 h3 {
+        color: var(--azul-primario);
+        margin-bottom: 15px;
+        font-size: 1.3rem;
+        text-align: center;
+    }
+
+    .contact-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        gap: 40px;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .whapp, .email, .instagram, .facebook {
+        width: 60px;
+        display: block;
+        margin: auto auto;
+    }
+
+    .btn-contacto {
+        display: inline-block;
+        background-color: var(--azul-primario);
+        color: white;
+        padding: 15px 30px;
+        text-decoration: none;
+        font-size: 1.2rem;
+        font-weight: bold;
+        border-radius: 50px;
+        transition: background-color 0.3s;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+        text-align: center;
+        margin-top: 50px;
+    }
+
+    .btn-contacto:hover {
+        background-color: #12336b;
+        transform:scale(1.05);
+    }
+
+    #nuestra-ubicacion {
+        color: black;
+        justify-content: flex-start;
+        align-items: center;
+        text-align:start;
+        padding-bottom: 100px;
+    }
+
+   .ubicacion-split {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 50px; /* Un poco más de separación */
+        max-width: 1200px; /* ¡La agrandamos de 1000 a 1200! */
+        margin: 0 auto;
+    }
+
+    .ubicacion-split .ubi {
+        width: 60%; /* El mapa ahora es el protagonista */
+        height: 400px; /* Le damos una altura fija generosa */
+        object-fit: cover; /* Para que el mapa no se deforme */
+        border-radius: 15px; /* Bordes bien redondeados */
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1); /* Sombra más premium */
+    }
+
+    .ubicacion-split .card {
+        width: 40%; /* La tarjeta acompaña al costado */
+        margin: 0;
+        /* El resto de lo que tenías en .card dejalo igual */
+    }
+
+    .btn-ubicacion {
+        margin-top: 50px;
+        text-align: center;
+    }
+
+    /* --- SECCIÓN: INGRESAR --- */
+
+    #ingresar {
+        background-color: var(--azul-primario);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    #ingresar h2 {
+        color: white;
+        border-bottom: 3px solid var(--verde);
+    }
+
+    .login-box {
+        background: white;
+        padding: 40px;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 400px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        color: var(--texto-oscuro);
+    }
+
+    .login-box p {
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .btn-ingresar {
+        display: inline-block;
+        background-color: var(--verde);
+        color: white;
+        padding: 15px 30px;
+        text-decoration: none;
+        font-size: 1.2rem;
+        font-weight: bold;
+        border-radius: 50px;
+        transition: background-color 0.3s;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    .btn-ingresar:hover {
+        background-color: #7ab033;
+        transform: scale(1.05);
+    }
+
+    /* --- CLASES DE ANIMACIÓN (Intersection Observer) --- */
+    
+    .oculto {
+        opacity: 0;
+        transform: translateY(100px);
+        transition: all 1s;
+    }
+    
+    .mostrar {
+        opacity: 1;
+        transform: translateY(0px);
+    }
+
+    /* --- RESPONSIVE (CELULARES Y TABLETS) --- */
+    
+    @media (max-width: 768px) {
+        header {
+            flex-direction: column;
+            padding: 15px;
+        }
+        nav ul {
+            margin-top: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .contact-container {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+/* ROMPEMOS LA PANTALLA DIVIDIDA EN CELULARES */
+        .quienes-somos-split,
+        .ubicacion-split {
+            flex-direction: column; /* Apila el contenido uno arriba del otro */
+            text-align: center;
+        }
+        
+        #quienes-somos h2, .intro-text {
+            text-align: center; /* Vuelve a centrar el texto en móviles */
+        }
+        
+        .ubicacion-split .ubi,
+        .ubicacion-split .card {
+            width: 100%; /* Hacemos que el mapa y su tarjeta ocupen todo el ancho */
+        }
+
+    } /* <--- ¡ESTA ES LA LLAVE MÁGICA QUE CERRAMOS ANTES DE TIEMPO! */
+
+
+    /* --- SECCIÓN: INSCRIPCIÓN (Llamado a la Acción) --- */
+    
+    #inscripcion {
+        /* Le damos un fondo fotográfico con un filtro oscuro para que la tarjeta brille */
+        background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("img/colegio.jpg");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed; /* Efecto parallax premium */
+        padding: 100px 5%; 
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* La caja blanca */
+    .cta-inscripcion {
+        background: #ffffff;
+        max-width: 800px;
+        width: 100%;
+        padding: 50px 40px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        border-top: 6px solid var(--verde);
+        margin: 0 auto; /* Centra la caja en la pantalla */
+        
+        /* MAGIA PARA CENTRAR EL CONTENIDO: */
+        display: flex;
+        flex-direction: column; /* Apila título, texto y botón */
+        align-items: center; /* Esto es clave: encoge el botón y centra todo */
+        text-align: center; /* Centra el texto del párrafo */
+    }
+
+    /* Aseguramos que el título se centre y su línea celeste quede en el medio */
+    .cta-inscripcion h2 {
+        text-align: center;
+        margin-left: 0;
+        margin-bottom: 20px;
+    }
+
+    /* Hacemos que el párrafo no sea tan ancho para que sea más fácil de leer */
+    .cta-inscripcion p {
+        font-size: 1.1rem;
+        color: var(--texto-oscuro);
+        margin-bottom: 40px;
+        line-height: 1.8;
+        max-width: 650px; /* Obliga al texto a bajar de renglón de forma prolija */
+    }
+
+    /* Domamos al botón para que no se estire */
+    .cta-inscripcion .btn-cta {
+        width: max-content; /* Le dice: "Ocupá solamente el ancho de tus palabras" */
+        padding: 15px 40px;
+        margin: 0; /* Limpiamos cualquier margen heredado */
+    }
+    
+  /* --- SECCIÓN: INSCRIPCIÓN (Llamado a la Acción) --- */
+    
+    #inscripcion {
+        background-color: var(--fondo-claro);
+        padding: 80px 5%; /* Le damos buen aire arriba y abajo */
+    }
+
+    /* La caja blanca */
+    .cta-inscripcion {
+        background: #ffffff;
+        max-width: 800px;
+        width: 100%;
+        padding: 50px 40px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        border-top: 6px solid var(--verde);
+        margin: 0 auto; /* Centra la caja en la pantalla */
+        
+        /* MAGIA PARA CENTRAR EL CONTENIDO: */
+        display: flex;
+        flex-direction: column; /* Apila título, texto y botón */
+        align-items: center; /* Esto es clave: encoge el botón y centra todo */
+        text-align: center; /* Centra el texto del párrafo */
+    }
+
+    /* Aseguramos que el título se centre y su línea celeste quede en el medio */
+    .cta-inscripcion h2 {
+        text-align: center;
+        margin-left: 0;
+        margin-bottom: 20px;
+    }
+
+    /* Hacemos que el párrafo no sea tan ancho para que sea más fácil de leer */
+    .cta-inscripcion p {
+        font-size: 1.1rem;
+        color: var(--texto-oscuro);
+        margin-bottom: 40px;
+        line-height: 1.8;
+        max-width: 650px; /* Obliga al texto a bajar de renglón de forma prolija */
+    }
+
+    /* Domamos al botón para que no se estire */
+    .cta-inscripcion .btn-cta {
+        width: max-content; /* Le dice: "Ocupá solamente el ancho de tus palabras" */
+        padding: 15px 40px;
+        margin: 0; /* Limpiamos cualquier margen heredado */
+    }
+    
+</style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-container">
+            <img src="img/logo.png" alt="Logo Educar para Transformar">
+            <h1>Educar para Transformar</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#quienes-somos">Quiénes Somos</a></li>
+                <li><a href="#contacto">Contacto</a></li>
+                <li><a href="#nuestra-ubicacion">Nuestra Ubicación</a></li>                
+                <li><a href="#inscripcion">Inscripción</a></li>
+                <li><a href="#ingresar">Ingresar</a></li>
+            </ul>
+        </nav>
+    </header>
+            <section id="hero">
+            <div class="hero-content">
+                <h1>Inspiramos, desafiamos y empoderamos a todos nuestros alumnos a ser miembros comprometidos y éticos de una comunidad global.</h1>
+
+            </div>
+        </section>
+
+   <section id="quienes-somos">
+    <div class="quienes-somos-split oculto">
+        
+        <div class="info-columna">
+            <h2>Quiénes Somos</h2>
+            <p class="intro-text">
+                El centro educativo <strong>"EDUCAR PARA TRANSFORMAR"</strong> es una institución de gestión privada de alta calidad educativa, ubicada en las afueras de la ciudad de Resistencia. Tenemos previsto abrir nuestras puertas e iniciar actividades en <strong>marzo de 2027</strong>.
+            </p>
+        </div>
+
+        <div class="visual-columna">
+            <div class="carrusel-contenedor">
+                <button class="btn-flecha" id="btn-atras">&#10094;</button> 
+
+                <div class="carrusel-pista">
+                    
+                    <div class="card">
+                        <h3>Oferta educativa</h3>
+                        <p>Niveles con jornada extendida:</p>
+                        <ul>
+                            <li>Inicial<a class="btn-mini" data-target="modal-ini"></a></li>
+                            <li>Primario<a class="btn-mini" data-target="modal-prim"></a></li>
+                            <li>Secundario<a class="btn-mini" data-target="modal-sec"></a></li>
+                        </ul>
+                        <p><strong>Idiomas:</strong> Inglés, Portugués y Francés.</p>
+                    </div>
+
+                    <div class="card" data-fondo="aula.jfif">
+                        <h3>Instalaciones</h3>
+                        <ul>
+                            <li>Laboratorios<a class="btn-mini" data-target="modal-lab"></a></li>
+                            <li>Pileta de Natación<a class="btn-mini" data-target="modal-pil"></a></li>
+                            <li>Canchas de Fútbol<a class="btn-mini" data-target="modal-can"></a></li>
+                            <li>Pista de Atletismo<a class="btn-mini" data-target="modal-atl"></a></li>
+                            <li>Gimnasio Cubierto<a class="btn-mini" data-target="modal-gim"></a></li>
+                            <li>Comedor<a class="btn-mini" data-target="modal-com"></a></li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h3>Deportes y Actividades</h3>
+                        <ul>
+                            <li>Atletismo<a class="btn-mini" data-target="modal-atle"></a></li>
+                            <li>Natación<a class="btn-mini" data-target="modal-nat"></a></li>
+                            <li>Fútbol<a class="btn-mini" data-target="modal-fut"></a></li>
+                            <li>Básquet<a class="btn-mini" data-target="modal-bas"></a></li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h3>Servicios Exclusivos</h3>
+                        <ul>
+                            <li>Servicio de Apoyo Estudiantil<a class="btn-mini" data-target="modal-apo"></a></li>
+                            <li>Servicio de Micros de Traslado<a class="btn-mini" data-target="modal-tra"></a></li>
+                            <li>Servicio de Comedor<a class="btn-mini" data-target="modal-come"></a></li>
+                            <li>Enfermería Permanente<a class="btn-mini" data-target="modal-enf"></a></li>
+                        </ul>
+                    </div>
+
+                </div>
+
+                <button class="btn-flecha" id="btn-adelante">&#10095;</button>
+            </div> 
+        </div> </div> </section>
+
+    <section id="contacto">
+        <div class="section-center oculto">
+            <h2>Contacto</h2>
+        </div>
+        <div class="grid-info oculto">
+        <div class="card2 oculto">
+            <h3>WhatsApp</h3>
+            <img src="img/whatsapp.png" alt="Logo WhatsApp" class="whapp">
+            <a href="https://wa.me/+5493625190959" target="_blank" class="btn-contacto btn-contactotexto">
+                Contactanos
+            </a>
+        </div>
+        <div class="card2 oculto">
+            <h3>E-Mail</h3>
+            <img src="img/email.png" alt="Logo Email" class="email">
+            <a href="https://mail.google.com/mail/u/0/?fs=1&to=javiergomez2001@gmail.com&su=Enquiry&tf=cm" target="_blank" class="btn-contacto btn-contactotexto">
+                Contactanos
+            </a>
+        </div>
+        <div class="card2 oculto">
+            <h3>Instagram</h3>
+            <img src="img/instagram.png" alt="Logo Instagram" class="instagram">
+            <a href="https://www.instagram.com" target="_blank" class="btn-contacto btn-contactotexto">
+                Contactanos
+            </a>
+        </div>
+                <div class="card2 oculto">
+            <h3>Facebook</h3>
+            <img src="img/facebook.png" alt="Logo Facebook" class="facebook">
+            <a href="https://www.facebook.com" target="_blank" class="btn-contacto btn-contactotexto">
+                Contactanos
+            </a>
+        </div>
+    </div>
+
+    </section>
+
+    <section id="nuestra-ubicacion"> 
+        <div class="section-center oculto">
+        <h2 class="ubicacion oculto" >Nuestra ubicación</h2>
+        </div>
+        <div class="ubicacion-split oculto">
+        <img src="img/ubicacion.png" alt="Ubicacion del colegio" class="ubi">
+        <div class="card oculto">
+            <p class="info-ubi"><strong>📍 Dirección:</strong> Afueras de la ciudad de Resistencia, Provincia del Chaco.</p>
+            <a href="https://maps.app.goo.gl/Mt3ujjbHfW29m8B17" target="_blank" class="btn-ingresar btn-ubicacion">
+                ¿Cómo llegar?
+            </a>
+        </div>
+        </div>
+    </section>
+
+    <section id="inscripcion">
+        <div class="cta-inscripcion oculto">
+            <h2>Solicitud de Inscripción</h2>
+            <p>El proceso de admisión para el ciclo lectivo 2027 ya se encuentra abierto. Te invitamos a ingresar a nuestro portal de inscripciones para completar tus datos y coordinar una entrevista con nuestro equipo.</p>
+            
+            <a href="inscripcion.html" class="btn-ingresar btn-cta">Ir al Formulario de Inscripción</a>
+        </div>
+    </section>
+
+    <section id="ingresar">
+        <h2 class="oculto">Portal del Sistema</h2>
+        
+        <div class="login-box oculto">
+            <h3 style="margin-bottom: 15px; color: var(--azul-primario);">Acceso al Sistema de Gestión</h3>
+            <p>Módulo de ingreso en desarrollo. Próximamente disponible para estudiantes, docentes y administrativos.</p>
+            
+            <button class="btn-ingresar" onclick="window.location.href='login.php'">Ingresar a la Plataforma</button>
+        </div>
+    </section>
+
+    <div class="modal-overlay" id="modal-ini">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/inicial.jpg" alt="Inicial">
+        <h4>Nivel inicial</h4>
+        <p>info</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-prim">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/primario.jfif" alt="Inicial">
+        <h4>Nivel primario</h4>
+        <p>info</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-sec">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/secundario.jpg" alt="Inicial">
+        <h4>Nivel secundario</h4>
+        <p>info</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-lab">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/laboratorio.jfif" alt="laboratorio">
+        <h4>Laboratorios</h4>
+        <p>info</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-pil">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/pileta.jpg" alt="piletas">
+        <h4>Piscinas semi-profesionales</h4>
+        <p>info</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-can">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/futbolcancha.jpg" alt="cancha">
+        <h4>Campos de juego de futbol</h4>
+        <p>info</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-atl">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/pistaatletismo.jfif" alt="pista_atletismo">
+        <h4>Pistas de atletismo</h4>
+        <p>info</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-gim">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/gimnasio.jfif" alt="gimnasio">
+        <h4>Gimnasios cubiertos</h4>
+        <p>info</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-com">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/comedor.jpg" alt="comedor">
+        <h4>Comedores</h4>
+        <p>info</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-atle">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/atletismo.jpg" alt="atle">
+        <h4>Atletismo</h4>
+        <p>info</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-nat">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/natacion.jpg" alt="natacion">
+        <h4>Natacion</h4>
+        <p>info</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-fut">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/futbol.jpg" alt="futbol">
+        <h4>futbol</h4>
+        <p>info</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-bas">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/basquet.jpg" alt="basquet">
+        <h4>Basquet</h4>
+        <p>info</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-apo">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/apoyo.jpg" alt="apoyo">
+        <h4>Servios de apoyoa a los estudiantes</h4>
+        <p>info</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-tra">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/traslado.jpg" alt="traslado">
+        <h4>Servicio de micros exclusivo para nuestros estudiantes</h4>
+        <p>info</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-come">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/comedor.jpg" alt="comedor">
+        <h4>Comedores</h4>
+        <p>info</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-enf">
+    <div class="modal-box">
+        <button class="btn-cerrar">X</button>
+        <img src="img/enfermeria.jpg" alt="enfermeria">
+        <h4>Enfermería</h4>
+        <p>info</p>
+    </div>
+</div>
+
+
+<script>
+// Scroll parallax effect: actualiza la variable CSS --scale basada en el scroll
+function updateParallax() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const scrollPercent = Math.min(1, scrollTop / docHeight);
+    
+    // Calcula la escala suavemente de 0.08 a 0 mientras scrolleas
+    const scale = Math.max(0, 0.08 * Math.pow(1 - scrollPercent, 1.2));
+    document.documentElement.style.setProperty('--scale', scale);
+}
+
+window.addEventListener('scroll', updateParallax, { passive: true });
+updateParallax(); // Llama una vez al cargar
+</script>
+
+</body>
+<script>
+    const tarjetasOcultas = document.querySelectorAll('.oculto');
+
+    const vigilante = new IntersectionObserver((entradas) => {
+    entradas.forEach((entrada) => {
+        if (entrada.isIntersecting) {
+            entrada.target.classList.add('mostrar');
+        }
+    });
+});
+
+tarjetasOcultas.forEach((tarjeta) => {
+    vigilante.observe(tarjeta);
+});
+
+/*  MOTOR DE VENTANAS MODALES*/
+
+// 1. SELECCIONAR A LOS ACTORES
+// Buscamos todos los botones azules (+) y todas las cruces de cerrar (X)
+const botonesAbrir = document.querySelectorAll('.btn-mini');
+const botonesCerrar = document.querySelectorAll('.btn-cerrar');
+const todosLosModales = document.querySelectorAll('.modal-overlay');
+
+// 2. LA LÓGICA DE ABRIR
+// Recorremos cada botoncito azul para ponerle un escuchador de clics
+botonesAbrir.forEach((boton) => {
+    boton.addEventListener('click', () => {
+        // Leemos el atributo data-target (ej: "modal-lab")
+        const idDelModal = boton.getAttribute('data-target');
+        
+        // Buscamos en el documento el telón negro que tenga ese ID exacto
+        const modalElegido = document.getElementById(idDelModal);
+        
+        // Le inyectamos la clase que lo hace visible
+        modalElegido.classList.add('modal-activo');
+    });
+});
+
+// 3. LA LÓGICA DE CERRAR (Con la X)
+// Recorremos cada botón de la X para ponerle su "escuchador"
+botonesCerrar.forEach((boton) => {
+    boton.addEventListener('click', () => {
+        // La herramienta .closest() busca hacia "arriba" en el HTML
+        // Le decimos: "Buscame al padre de esta X que tenga la clase .modal-overlay"
+        const modalPadre = boton.closest('.modal-overlay');
+        
+        // Le sacamos la clase para que se vuelva a ocultar
+        modalPadre.classList.remove('modal-activo');
+    });
+});
+
+// 4. EL TOQUE PROFESIONAL (Cerrar haciendo clic afuera)
+// Recorremos todos los telones negros
+todosLosModales.forEach((modal) => {
+    modal.addEventListener('click', (evento) => {
+        // Preguntamos: ¿El usuario le hizo clic exactamente al fondo negro (modal)?
+        // (Esto evita que se cierre si hace clic adentro de la tarjeta blanca)
+        if (evento.target === modal) {
+            modal.classList.remove('modal-activo');
+        }
+    });
+});
+
+/*MOTOR DEL CARRUSEL (SLIDER MANUAL)*/
+
+// 1. RECOLECTAR MATERIALES
+// Le decimos a JavaScript: "Buscame todas las tarjetas que están en la pista y guardalas en una lista
+const tarjetasCarrusel = document.querySelectorAll('.carrusel-pista .card');
+// Buscamos los dos botones de las flechas
+const btnAtras = document.getElementById('btn-atras');
+const btnAdelante = document.getElementById('btn-adelante');
+
+// 2. EL CONTADOR (La memoria del sistema)
+// En programación, siempre empezamos a contar desde el cero. La primera tarjeta es la 0.
+let tarjetaActual = 0;
+
+// 3. LA FUNCIÓN MAESTRA (La que hace el trabajo sucio)
+function mostrarTarjeta(indice) {
+    // Paso A: Agarramos la lista de tarjetas y le sacamos la clase "tarjeta-activa" a TODAS.
+    // Es como apagar todas las luces de un edificio.
+    tarjetasCarrusel.forEach(function(tarjeta) {
+        tarjeta.classList.remove('tarjeta-activa');
+    });
+
+    // Paso B: Vamos a la tarjeta específica que nos pide el contador (el índice)
+    // y solo a esa le prendemos la luz agregándole la clase.
+    tarjetasCarrusel[indice].classList.add('tarjeta-activa');
+}
+
+// 4. ENCENDIDO INICIAL
+// Cuando el usuario entra a la página, le decimos que ejecute la función mostrando la tarjeta 0.
+if (tarjetasCarrusel.length > 0) {
+    mostrarTarjeta(tarjetaActual);
+}
+
+// 5. ACCIÓN: QUÉ PASA AL TOCAR LA FLECHA DERECHA (Adelante)
+btnAdelante.addEventListener('click', function() {
+    // Le sumamos 1 a nuestro contador
+    tarjetaActual = tarjetaActual + 1; 
+
+    // Regla matemática: Si el contador se pasa de la cantidad de tarjetas que tenemos...
+    // (Ejemplo: si estamos en la carta 4 y tocamos siguiente), lo reseteamos a 0 para que vuelva a empezar.
+    if (tarjetaActual >= tarjetasCarrusel.length) {
+        tarjetaActual = 0;
+    }
+
+    // Le pedimos a la función maestra que dibuje la pantalla con el nuevo número
+    mostrarTarjeta(tarjetaActual); 
+});
+
+// 6. ACCIÓN: QUÉ PASA AL TOCAR LA FLECHA IZQUIERDA (Atrás)
+btnAtras.addEventListener('click', function() {
+    // Le restamos 1 a nuestro contador
+    tarjetaActual = tarjetaActual - 1; 
+
+    // Regla matemática: Si estábamos en la primera tarjeta (la 0) y el usuario retrocede (da -1)...
+    // Lo mandamos al final de la lista. (Length - 1 significa "la última tarjeta").
+    if (tarjetaActual < 0) {
+        tarjetaActual = tarjetasCarrusel.length - 1;
+    }
+
+    // Le pedimos a la función maestra que dibuje la pantalla
+    mostrarTarjeta(tarjetaActual); 
+});
+</script>
+</html>

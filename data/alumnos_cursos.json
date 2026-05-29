@@ -1,0 +1,54 @@
+{
+    "1_grado_A": [
+        "Alumno Uno (1ro)"
+    ],
+    "2_grado_A": [
+        "Alumno Dos (2do)"
+    ],
+    "3_grado_A": [
+        "Alumno Tres (3ro)"
+    ],
+    "4_grado_A": [
+        "Alumno Cuatro (4to)"
+    ],
+    "5_grado_A": [
+        "Alumno Cinco (5to)"
+    ],
+    "6_grado_A": [
+        "Alumno Seis (6to)"
+    ],
+    "7_grado_A": [
+        "Alumno Siete (7mo)"
+    ],
+    "1_anio_A": [
+        "Alumno Secu (1ro)"
+    ],
+    "2_anio_A": [
+        "Alumno Secu (2do)"
+    ],
+    "3_anio_A": [
+        "Alumno Secu (3ro)"
+    ],
+    "4_anio_A": [
+        "Alumno Secu (4to)",
+        "Julieta Pérez",
+        "Benjamín López"
+    ],
+    "5_anio_A": [
+        "Jumanji Nilo",
+        "Alumno Secu (5to)",
+        "Martina Giménez",
+        "Lucas Álvarez"
+    ],
+    "3_anio_B": [
+        "Jose Ojeda"
+    ],
+    "4_anio_B": [
+        "Julieta Pérez",
+        "Benjamín López",
+        "Javier Gomez"
+    ],
+    "5_anio_B": [
+        "Alexis Mongelo"
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "Jumanji Nilo": {
+        "Literatura": [
+            {
+                "examen": "Análisis Narrativo",
+                "nota": 8.5
+            }
+        ],
+        "Matemática": [
+            {
+                "examen": "Ecuaciones de 2do Grado",
+                "nota": 9
+            }
+        ]
+    },
+    "Alumno Uno (1ro)": {
+        "Lengua": [],
+        "Música": [
+            {
+                "examen": "1er Prueba",
+                "nota": 6
+            }
+        ],
+        "Ciencias Naturales": [
+            {
+                "examen": "Primer prueba",
+                "nota": 8
+            }
+        ]
+    },
+    "Alumno Dos (2do)": {
+        "Ciencias Sociales": []
+    },
+    "Alexis Mongelo": {
+        "Historia": [
+            {
+                "examen": "1er Prueba",
+                "nota": 7
+            }
+        ]
+    },
+    "Jose Ojeda": {
+        "Biología": [
+            {
+                "examen": "Primer prueba",
+                "nota": 1
+            }
+        ]
+    }
+}

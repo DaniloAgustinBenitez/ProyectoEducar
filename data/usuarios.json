@@ -1,0 +1,260 @@
+[
+    {
+        "usuario": "jumanji",
+        "password": "123",
+        "rol": "alumno",
+        "nombre": "Jumanji Nilo"
+    },
+    {
+        "usuario": "admin",
+        "password": "admin",
+        "rol": "admin",
+        "nombre": "Admin"
+    },
+    {
+        "usuario": "profesor",
+        "password": "admin",
+        "rol": "profesor",
+        "nombre": "Profesor"
+    },
+    {
+        "usuario": "seno1",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Seño 1er Grado"
+    },
+    {
+        "usuario": "seno2",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Seño 2do Grado"
+    },
+    {
+        "usuario": "profe3",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Profe 3er Grado"
+    },
+    {
+        "usuario": "seno4",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Seño 4to Grado"
+    },
+    {
+        "usuario": "profe5",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Profe 5to Grado"
+    },
+    {
+        "usuario": "seno6",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Seño 6to Grado"
+    },
+    {
+        "usuario": "profe7",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Profe 7mo Grado"
+    },
+    {
+        "usuario": "profesec1",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Profe 1er Año"
+    },
+    {
+        "usuario": "profesec2",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Profe 2do Año"
+    },
+    {
+        "usuario": "profesec3",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Profe 3er Año"
+    },
+    {
+        "usuario": "profesec4",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Profe 4to Año"
+    },
+    {
+        "usuario": "profesec5",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Profe 5to Año"
+    },
+    {
+        "usuario": "alum1",
+        "password": "123",
+        "rol": "alumno",
+        "nombre": "Alumno Uno (1ro)"
+    },
+    {
+        "usuario": "alum2",
+        "password": "123",
+        "rol": "alumno",
+        "nombre": "Alumno Dos (2do)"
+    },
+    {
+        "usuario": "alum3",
+        "password": "123",
+        "rol": "alumno",
+        "nombre": "Alumno Tres (3ro)"
+    },
+    {
+        "usuario": "alum4",
+        "password": "123",
+        "rol": "alumno",
+        "nombre": "Alumno Cuatro (4to)"
+    },
+    {
+        "usuario": "alum5",
+        "password": "123",
+        "rol": "alumno",
+        "nombre": "Alumno Cinco (5to)"
+    },
+    {
+        "usuario": "alum6",
+        "password": "123",
+        "rol": "alumno",
+        "nombre": "Alumno Seis (6to)"
+    },
+    {
+        "usuario": "alum7",
+        "password": "123",
+        "rol": "alumno",
+        "nombre": "Alumno Siete (7mo)"
+    },
+    {
+        "usuario": "alumsec1",
+        "password": "123",
+        "rol": "alumno",
+        "nombre": "Alumno Secu (1ro)"
+    },
+    {
+        "usuario": "alumsec2",
+        "password": "123",
+        "rol": "alumno",
+        "nombre": "Alumno Secu (2do)"
+    },
+    {
+        "usuario": "alumsec3",
+        "password": "123",
+        "rol": "alumno",
+        "nombre": "Alumno Secu (3ro)"
+    },
+    {
+        "usuario": "alumsec4",
+        "password": "123",
+        "rol": "alumno",
+        "nombre": "Alumno Secu (4to)"
+    },
+    {
+        "usuario": "alumsec5",
+        "password": "123",
+        "rol": "alumno",
+        "nombre": "Alumno Secu (5to)"
+    },
+    {
+        "usuario": "jgomez",
+        "password": "123",
+        "rol": "alumno",
+        "nombre": "Javier Gomez"
+    },
+    {
+        "usuario": "jperez",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Jimena Perez"
+    },
+    {
+        "usuario": "amongelo",
+        "password": "123",
+        "rol": "alumno",
+        "nombre": "Alexis Mongelo"
+    },
+    {
+        "usuario": "jojeda",
+        "password": "123",
+        "rol": "alumno",
+        "nombre": "Jose Ojeda"
+    },
+    {
+        "usuario": "crodriguez",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Carlos Rodríguez"
+    },
+    {
+        "usuario": "amartinez",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Ana María Martínez"
+    },
+    {
+        "usuario": "jclopez",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Juan Carlos López"
+    },
+    {
+        "usuario": "pgomez",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Patricia Gómez"
+    },
+    {
+        "usuario": "lbenitez",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Laura Benítez"
+    },
+    {
+        "usuario": "djuarez",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Diego Juárez"
+    },
+    {
+        "usuario": "cfernandez",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Claudia Fernández"
+    },
+    {
+        "usuario": "jalmiron",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Jorge Almirón"
+    },
+    {
+        "usuario": "aortega",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Ariel Ortega"
+    },
+    {
+        "usuario": "msilva",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Marina Silva"
+    },
+    {
+        "usuario": "erossi",
+        "password": "123",
+        "rol": "profesor",
+        "nombre": "Esteban Rossi"
+    },
+    {
+        "usuario": "precep1",
+        "password": "123",
+        "rol": "preceptor",
+        "nombre": "precep1"
+    }
+]

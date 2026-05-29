@@ -1,0 +1,712 @@
+{
+    "Seño 1er Grado": [
+        {
+            "nivel": "primaria",
+            "curso": "1_grado",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Maestro\/a de Grado"
+        }
+    ],
+    "Seño 2do Grado": [
+        {
+            "nivel": "primaria",
+            "curso": "2_grado",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Maestro\/a de Grado"
+        }
+    ],
+    "Profe 3er Grado": [
+        {
+            "nivel": "primaria",
+            "curso": "3_grado",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Maestro\/a de Grado"
+        }
+    ],
+    "Seño 4to Grado": [
+        {
+            "nivel": "primaria",
+            "curso": "4_grado",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Maestro\/a de Grado"
+        }
+    ],
+    "Profe 5to Grado": [
+        {
+            "nivel": "primaria",
+            "curso": "5_grado",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Maestro\/a de Grado"
+        }
+    ],
+    "Seño 6to Grado": [
+        {
+            "nivel": "primaria",
+            "curso": "6_grado",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Maestro\/a de Grado"
+        }
+    ],
+    "Profe 7mo Grado": [
+        {
+            "nivel": "primaria",
+            "curso": "7_grado",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Maestro\/a de Grado"
+        }
+    ],
+    "Carlos Rodríguez": [
+        {
+            "nivel": "secundaria",
+            "curso": "1_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Literatura"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "2_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Literatura"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Literatura"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Literatura"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Literatura"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Literatura"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Literatura"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Literatura"
+        }
+    ],
+    "Ana María Martínez": [
+        {
+            "nivel": "secundaria",
+            "curso": "1_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Matemática"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "2_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Matemática"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Matemática"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Matemática"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Matemática"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Matemática"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Matemática"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Matemática"
+        }
+    ],
+    "Juan Carlos López": [
+        {
+            "nivel": "secundaria",
+            "curso": "1_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Física"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "2_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Física"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Física"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Física"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Física"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Física"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Física"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Física"
+        }
+    ],
+    "Patricia Gómez": [
+        {
+            "nivel": "secundaria",
+            "curso": "1_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Historia"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "2_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Historia"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Historia"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Historia"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Historia"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Historia"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Historia"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Historia"
+        }
+    ],
+    "Laura Benítez": [
+        {
+            "nivel": "secundaria",
+            "curso": "1_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Biología"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "2_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Biología"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Biología"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Biología"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Biología"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Biología"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Biología"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Biología"
+        }
+    ],
+    "Diego Juárez": [
+        {
+            "nivel": "secundaria",
+            "curso": "1_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Geografía"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "2_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Geografía"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Geografía"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Geografía"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Geografía"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Geografía"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Geografía"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Geografía"
+        }
+    ],
+    "Claudia Fernández": [
+        {
+            "nivel": "secundaria",
+            "curso": "1_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Inglés"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "2_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Inglés"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Inglés"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Inglés"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Inglés"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Inglés"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Inglés"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Inglés"
+        }
+    ],
+    "Jorge Almirón": [
+        {
+            "nivel": "secundaria",
+            "curso": "1_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Educación Física"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "2_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Educación Física"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Educación Física"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Educación Física"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Educación Física"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Educación Física"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Educación Física"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Educación Física"
+        }
+    ],
+    "Ariel Ortega": [
+        {
+            "nivel": "secundaria",
+            "curso": "1_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Educación Tecnológica"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "2_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Educación Tecnológica"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Educación Tecnológica"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Educación Tecnológica"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Educación Tecnológica"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Educación Tecnológica"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Educación Tecnológica"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Educación Tecnológica"
+        }
+    ],
+    "Marina Silva": [
+        {
+            "nivel": "secundaria",
+            "curso": "1_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Construcción Ciudadana"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "2_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Construcción Ciudadana"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Construcción Ciudadana"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Construcción Ciudadana"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Construcción Ciudadana"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Construcción Ciudadana"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Construcción Ciudadana"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Construcción Ciudadana"
+        }
+    ],
+    "Esteban Rossi": [
+        {
+            "nivel": "secundaria",
+            "curso": "1_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Contabilidad"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "2_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Contabilidad"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Contabilidad"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Contabilidad"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Contabilidad"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Contabilidad"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "4_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Contabilidad"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "B",
+            "turno": "Mañana",
+            "materia": "Contabilidad"
+        }
+    ],
+    "precep1": [
+        {
+            "nivel": "secundaria",
+            "curso": "5_anio",
+            "division": "B",
+            "materia": "Preceptor\/a",
+            "turno": "Mañana"
+        }
+    ]
+}

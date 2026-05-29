@@ -26,6 +26,12 @@
                 "examen": "Primer prueba",
                 "nota": 8
             }
+        ],
+        "Ciencias Sociales": [
+            {
+                "examen": "1er Prueba",
+                "nota": 6
+            }
         ]
     },
     "Alumno Dos (2do)": {

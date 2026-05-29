@@ -1,24 +1,43 @@
 <?php
 session_start();
 
-// Solo el profesor puede cambiar el menú
-if (!isset($_SESSION['usuario']) || $_SESSION['usuario'] !== 'Profesor') {
-    header('Location: ../login.php');
+// Verificamos que sea administrador
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
+    header('Location: ../dashboard.php');
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nuevo_menu = [
-        "plato_principal" => $_POST['plato_principal'],
-        "opcion_vegetariana" => $_POST['opcion_vegetariana'],
-        "postre" => $_POST['postre']
-    ];
+    // Recogemos los datos del formulario de dashboard.php
+    $plato_principal = trim($_POST['plato_principal'] ?? '');
+    $opcion_vegetariana = trim($_POST['opcion_vegetariana'] ?? '');
+    $postre = trim($_POST['postre'] ?? '');
 
-    // Guardamos en el archivo menu.json
-    file_put_contents(__DIR__ . '/../data/menu.json', json_encode($nuevo_menu, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    if (!empty($plato_principal) && !empty($opcion_vegetariana) && !empty($postre)) {
+        
+        $menu_actualizado = [
+            "plato_principal" => $plato_principal,
+            "opcion_vegetariana" => $opcion_vegetariana,
+            "postre" => $postre
+        ];
 
-    // Volvemos al panel
-    header('Location: ../dashboard.php?vista=vista-comedor&msj=menu_actualizado');
+        // MAGIA DE RUTAS: Salimos de la carpeta "procesos" y entramos a "data"
+        $archivo_menu = __DIR__ . '/../data/menu.json';
+        
+        // Por las dudas, si la carpeta data no existe, la crea
+        if (!file_exists(__DIR__ . '/../data')) {
+            mkdir(__DIR__ . '/../data', 0777, true);
+        }
+
+        // Guardamos el JSON de forma ordenada
+        file_put_contents($archivo_menu, json_encode($menu_actualizado, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+
+    // Lo devolvemos al dashboard en la pestaña del comedor
+    header('Location: ../dashboard.php?vista=vista-comedor');
     exit;
 }
+
+header('Location: ../dashboard.php');
+exit;
 ?>

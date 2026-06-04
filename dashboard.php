@@ -15,29 +15,76 @@ $es_profesor = ($rol_actual === 'profesor');
 $es_admin = ($rol_actual === 'admin');
 $es_alumno = ($rol_actual === 'alumno');
 $es_preceptor = ($rol_actual === 'preceptor'); 
-
+$es_tutor = ($rol_actual === 'tutor'); // ¡NUEVO ROL!
 
 // 1. LÓGICA PARA LEER TODOS LOS USUARIOS PRIMERO
 $archivo_usuarios_lista = __DIR__ . '/data/usuarios.json';
 $todos_los_usuarios = [];
-$nombre_completo_actual = $usuario_actual; // Por defecto
+$nombre_completo_actual = trim($usuario_actual); // Por defecto
+$mi_usuario_login = trim($usuario_actual); // Por defecto
 
 if (file_exists($archivo_usuarios_lista)) {
     $todos_los_usuarios = json_decode(file_get_contents($archivo_usuarios_lista), true) ?: [];
-    // Averiguamos el nombre completo de la persona logueada
     foreach ($todos_los_usuarios as $usr) {
-        if (strtolower($usr['usuario']) === strtolower($usuario_actual)) {
-            $nombre_completo_actual = $usr['nombre'];
+        // MAGIA: Cruzamos datos. Si la sesión es "Gustavo Mongelo" (nombre) o "gmongelo" (login), lo unimos.
+        if (strtolower(trim($usr['usuario'])) === strtolower(trim($usuario_actual)) || 
+            strtolower(trim($usr['nombre'])) === strtolower(trim($usuario_actual))) {
+            
+            $nombre_completo_actual = trim($usr['nombre']); // Ej: Gustavo Mongelo
+            $mi_usuario_login = trim($usr['usuario']); // Ej: gmongelo
             break;
         }
     }
 }
 
-// 2. CREAMOS LAS INICIALES CON EL NOMBRE COMPLETO
-$palabras = explode(" ", $nombre_completo_actual);
+// 2. MAGIA DE TUTORES: El hilo invisible
+$archivo_tutores = __DIR__ . '/data/tutores_alumnos.json';
+$mis_tutelados = [];
+$alumno_seleccionado = ''; 
+
+if (file_exists($archivo_tutores)) {
+    $mapa_tutores = json_decode(file_get_contents($archivo_tutores), true) ?: [];
+    
+    if ($es_tutor) {
+        // BÚSQUEDA SÚPER INTELIGENTE DEFINITIVA
+        foreach ($mapa_tutores as $tutor_key => $lista_hijos) {
+            $llave_limpia = strtolower(trim($tutor_key));
+            
+            // Ahora comparamos contra las dos identidades (Nombre y Login)
+            if ($llave_limpia === strtolower($mi_usuario_login) || 
+                $llave_limpia === strtolower($nombre_completo_actual) ||
+                $llave_limpia === strtolower(trim($usuario_actual))) {
+                
+                $mis_tutelados = $lista_hijos;
+                break;
+            }
+        }
+        
+        // --- MAGIA: Leemos si el tutor cambió de hijo ---
+        if (!empty($mis_tutelados)) {
+            if (isset($_GET['hijo']) && in_array($_GET['hijo'], $mis_tutelados)) {
+                $alumno_seleccionado = $_GET['hijo'];
+            } else {
+                $alumno_seleccionado = $mis_tutelados[0] ?? ''; // Primer hijo por defecto
+            }
+        }
+    }
+}
+
+// Generamos la etiqueta visual y "engañamos" al sistema
+$etiqueta_perfil = $nombre_completo_actual; // Guardamos su nombre real para el diseño
+
+if ($es_tutor && !empty($alumno_seleccionado)) {
+    $etiqueta_perfil = "Tutor de " . $alumno_seleccionado;
+    // HACK: Reemplazamos su nombre por el del hijo para que TODAS las consultas busquen al alumno
+    $nombre_completo_actual = $alumno_seleccionado; 
+}
+
+// 2.5 CREAMOS LAS INICIALES CON EL NOMBRE
+$palabras = explode(" ", $etiqueta_perfil);
 $iniciales = "";
 foreach ($palabras as $p) {
-    if (!empty($p)) {
+    if (!empty($p) && ctype_alpha(mb_substr($p, 0, 1))) {
         $iniciales .= mb_substr($p, 0, 1);
     }
 }
@@ -88,7 +135,7 @@ if (file_exists($archivo_notas)) {
     $todas_las_notas = json_decode($contenido, true) ?: [];
 }
 
-if ($es_alumno) {
+if ($es_alumno || $es_tutor) {
     // A. ¿En qué cursos está el alumno?
     $mis_cursos_alumno = [];
     foreach ($alumnos_por_curso as $clave_curso => $lista_alumnos) {
@@ -810,6 +857,7 @@ $oferta_cursos = [
 
         .nav-item[data-vista="vista-asistencia-preceptor"].menu-activo { color: var(--celeste); border-right: 4px solid var(--celeste); }  
         .nav-item[data-vista="vista-documentos-preceptor"].menu-activo { color: var(--celeste); border-right: 4px solid var(--celeste); }
+        .item-hijo:hover { background-color: #eef2f5; border-radius: 4px; }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -821,7 +869,49 @@ $oferta_cursos = [
             <span class="section-title" id="logo-text" style="color: var(--azul-primario); font-size: 1rem;">GESTIÓN EDUCATIVA</span>
             <div class="menu-toggle" onclick="toggleSidebar()">☰</div>
         </div>
-        <?php if ($es_alumno): ?>
+        <?php if ($es_tutor): ?>
+            <?php if (!empty($mis_tutelados)): ?>
+            <div class="menu-section" style="background-color: #f8fbfb; margin: 10px 15px; border-radius: 8px; padding: 15px; border: 1px solid #e1e8ed;">
+                <span class="section-title" style="color: var(--azul-primario); margin-bottom: 8px;">👨‍👩‍👧 Alumno Seleccionado</span>
+                <form action="dashboard.php" method="GET" id="form-cambiar-hijo" style="margin: 0;">
+                    <input type="hidden" name="vista" id="vista-actual-input" value="vista-documentacion">
+                    
+                    <select name="hijo" onchange="document.getElementById('form-cambiar-hijo').submit();" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 0.9rem; font-weight: bold; color: #444; cursor: pointer;">
+                        <?php foreach ($mis_tutelados as $tutelado): ?>
+                            <option value="<?php echo htmlspecialchars($tutelado); ?>" <?php echo $alumno_seleccionado === $tutelado ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($tutelado); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
+            </div>
+            <script>
+                document.getElementById('form-cambiar-hijo')?.addEventListener('submit', function() {
+                    const vistaActiva = document.querySelector('.vista-activa');
+                    if (vistaActiva) {
+                        document.getElementById('vista-actual-input').value = vistaActiva.id;
+                    }
+                });
+            </script>
+            <?php else: ?>
+            <div class="menu-section" style="background-color: #fce8e6; margin: 10px 15px; border-radius: 8px; padding: 15px; border: 1px solid #f5c6cb;">
+                <span style="color: var(--naranja); font-size: 0.85rem; font-weight: bold;">⚠️ Sin hijos asignados</span>
+                <p style="font-size: 0.8rem; color: #666; margin-top: 5px; margin-bottom: 0;">Este perfil no tiene alumnos vinculados.</p>
+                
+                <div style="background: #222; color: #0f0; padding: 10px; margin-top: 15px; border-radius: 4px; font-family: monospace; font-size: 0.7rem; overflow-wrap: break-word;">
+                    <strong>🕵️ DIAGNÓSTICO:</strong><br>
+                    Sesión PHP: [<?php echo htmlspecialchars($usuario_actual); ?>]<br>
+                    Nombre Perfil: [<?php echo htmlspecialchars($nombre_completo_actual); ?>]<br>
+                    Lectura JSON: <?php echo file_exists($archivo_tutores) ? 'OK' : 'ERROR RUTAS'; ?><br>
+                    Llaves JSON: [<?php 
+                        $leido = json_decode(file_get_contents($archivo_tutores), true) ?: [];
+                        echo htmlspecialchars(implode(', ', array_keys($leido))); 
+                    ?>]
+                </div>
+            </div>
+            <?php endif; ?>
+        <?php endif; ?>
+        <?php if ($es_alumno || $es_tutor): ?>
         <div class="menu-section">
             <span class="section-title">Padres y Alumnos</span>
             <a href="#" class="nav-item menu-activo" data-vista="vista-documentacion"><i>📂</i> <span>Documentación</span></a>
@@ -871,14 +961,14 @@ $oferta_cursos = [
 
    <main class="main-content">
         
-        <section id="vista-documentacion" class="vista-panel <?php echo $es_alumno ? 'vista-activa' : ''; ?>">
+        <section id="vista-documentacion" class="vista-panel <?php echo ($es_alumno || $es_tutor) ? 'vista-activa' : ''; ?>">   
             <header class="top-bar">
                 <div class="user-welcome">
                     <h1>Carga de Documentación</h1>
                     <p style="color: #666;">Subí certificados médicos, partidas de nacimiento y permisos.</p>
                 </div>
                 <div class="user-profile">
-                    <span class="user-name"><?php echo $usuario_actual; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
@@ -1082,7 +1172,7 @@ $oferta_cursos = [
                     <p style="color: #666;">Detalle de exámenes, promedios y asistencia por materia.</p>
                 </div>
                 <div class="user-profile">
-                    <span class="user-name"><?php echo $usuario_actual; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
@@ -1123,7 +1213,7 @@ $oferta_cursos = [
                     <p style="color: #666;">Ubicación del transporte en tiempo real y menú escolar.</p>
                 </div>
                 <div class="user-profile">
-                    <span class="user-name"><?php echo $usuario_actual; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
@@ -1159,7 +1249,7 @@ $oferta_cursos = [
                     <p style="color: #666;">Talleres y deportes en los que el alumno participa.</p>
                 </div>
                 <div class="user-profile">
-                    <span class="user-name"><?php echo $usuario_actual; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
@@ -1206,7 +1296,7 @@ $oferta_cursos = [
                     <p style="color: #666;">Control de notas y asistencias por curso.</p>
                 </div>
                 <div class="user-profile">
-                    <span class="user-name"><?php echo $usuario_actual; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
@@ -1319,7 +1409,7 @@ $oferta_cursos = [
                     <p style="color: #666;">Gestioná el uso de laboratorios y áreas deportivas.</p>
                 </div>
                 <div class="user-profile">
-                    <span class="user-name"><?php echo $usuario_actual; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
@@ -1458,7 +1548,7 @@ $oferta_cursos = [
                     <p style="color: #666;">Capacitaciones docentes y legajos médicos de alumnos.</p>
                 </div>
                 <div class="user-profile">
-                    <span class="user-name"><?php echo $usuario_actual; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
@@ -1600,7 +1690,7 @@ $oferta_cursos = [
                         <p style="color: #666;">Administración de perfiles y credenciales de acceso al sistema.</p>
                     </div>
                     <div class="user-profile">
-                        <span class="user-name"><?php echo $usuario_actual; ?></span>
+                        <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                         <div class="user-avatar"><?php echo $iniciales; ?></div>
                     </div>
                 </div>
@@ -1628,7 +1718,7 @@ $oferta_cursos = [
                     <p style="color: #666;">Control individual y registro de pago de matrículas de alumnos.</p>
                 </div>
                 <div class="user-profile">
-                    <span class="user-name"><?php echo $usuario_actual; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
@@ -1718,7 +1808,7 @@ $oferta_cursos = [
                     <p style="color: #666;">Gestión de haberes y recibos digitales del personal de la institución.</p>
                 </div>
                 <div class="user-profile">
-                    <span class="user-name"><?php echo $usuario_actual; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
@@ -1810,7 +1900,7 @@ $oferta_cursos = [
                     <p style="color: #666;">Carga de menú y administración de proveedores.</p>
                 </div>
                 <div class="user-profile">
-                    <span class="user-name"><?php echo $usuario_actual; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
@@ -1849,7 +1939,7 @@ $oferta_cursos = [
                     <p style="color: #666;">Seguimiento en tiempo real de las unidades de traslado.</p>
                 </div>
                 <div class="user-profile">
-                    <span class="user-name"><?php echo $usuario_actual; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
@@ -1881,7 +1971,7 @@ $oferta_cursos = [
                     <p style="color: #666;">Control de reparaciones y estado de áreas.</p>
                 </div>
                 <div class="user-profile">
-                    <span class="user-name"><?php echo $usuario_actual; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
@@ -1925,7 +2015,7 @@ $oferta_cursos = [
                     <p style="color: #666;">Historial de faltas registradas.</p>
                 </div>
                 <div class="user-profile">
-                    <span class="user-name"><?php echo $usuario_actual; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
@@ -1981,7 +2071,7 @@ $oferta_cursos = [
                     <p style="color: #666;">Seleccioná el curso y marcá únicamente a los alumnos ausentes.</p>
                 </div>
                 <div class="user-profile">
-                    <span class="user-name"><?php echo $usuario_actual; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
@@ -2073,7 +2163,7 @@ $oferta_cursos = [
                     <p style="color: #666;">Panel de certificados y permisos de retiro de los alumnos a tu cargo.</p>
                 </div>
                 <div class="user-profile">
-                    <span class="user-name"><?php echo $usuario_actual; ?></span>
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
@@ -2227,7 +2317,8 @@ $oferta_cursos = [
                 </div>
             </form>
         </div>
-    </div> <?php if ($es_admin): ?> <div class="modal-overlay" id="modal-usuarios">
+    </div> <?php if ($es_admin): ?> 
+        <div class="modal-overlay" id="modal-usuarios">
         <div class="modal-box">
             <div class="modal-header">
                 <h2>Registrar Nuevo Perfil Institucional</h2>
@@ -2244,7 +2335,8 @@ $oferta_cursos = [
                         <label>Tipo de Perfil (Rol)</label>
                         <select name="rol" id="select-rol" required style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
                             <option value="" disabled selected>Seleccioná una opción...</option>
-                            <option value="alumno">🎒 Alumno / Tutor</option>
+                            <option value="alumno">🎒 Alumno</option>
+                            <option value="tutor">👨‍👩‍👧 Padre / Tutor</option>
                             <option value="profesor">📚 Personal Docente</option>
                             <option value="preceptor">📋 Preceptor / Auxiliar</option>
                             <option value="admin">⚙️ Administrador</option>
@@ -2263,9 +2355,8 @@ $oferta_cursos = [
 
                     <div id="campos-alumno" style="grid-column: 1 / -1; display: none; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div class="input-group" style="grid-column: 1 / -1; margin-top: 10px; border-top: 1px dashed #eee; padding-top: 15px;">
-                            <strong style="color: var(--verde); font-size: 0.9rem;">Asignación de Curso (Solo si el perfil es Alumno / Tutor)</strong>
+                            <strong style="color: var(--verde); font-size: 0.9rem;">Asignación de Curso (Solo Perfil Alumno)</strong>
                         </div>
-
                         <div class="input-group">
                             <label>Año / Grado</label>
                             <select name="curso_asig_al" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
@@ -2283,7 +2374,6 @@ $oferta_cursos = [
                                 <option value="1_grado">1° Grado (Primaria)</option>
                             </select>
                         </div>
-
                         <div class="input-group">
                             <label>División</label>
                             <select name="division_asig_al" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
@@ -2294,11 +2384,41 @@ $oferta_cursos = [
                         </div>
                     </div>
 
+                    <div id="campos-tutor" style="grid-column: 1 / -1; display: none; grid-template-columns: 1fr; gap: 15px;">
+                        <div class="input-group" style="grid-column: 1 / -1; margin-top: 10px; border-top: 1px dashed #eee; padding-top: 15px;">
+                            <strong style="color: var(--naranja); font-size: 0.9rem;">Vincular con Alumno/s (Solo para Tutores)</strong>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label>Buscar y Seleccionar Hijo/s</label>
+                            <input type="text" id="buscador-hijos" placeholder="🔍 Escribí el nombre para filtrar..." style="padding: 10px; border: 1px solid #ddd; border-radius: 6px 6px 0 0; margin-bottom: 0; border-bottom: none; outline: none; background: #fff;">
+                            
+                            <div id="lista-hijos-checkboxes" style="max-height: 180px; overflow-y: auto; border: 1px solid #ddd; border-radius: 0 0 6px 6px; padding: 10px; background: #fafafa;">
+                                <?php 
+                                $hay_alumnos = false;
+                                foreach ($todos_los_usuarios as $u): 
+                                ?>
+                                    <?php if (($u['rol'] ?? '') === 'alumno'): 
+                                        $hay_alumnos = true;
+                                    ?>
+                                        <label class="item-hijo" style="display: flex; align-items: center; gap: 10px; padding: 8px; cursor: pointer; border-bottom: 1px solid #eee; transition: 0.2s;">
+                                            <input type="checkbox" name="hijos_asignados[]" value="<?php echo htmlspecialchars($u['nombre']); ?>" style="margin: 0; width: 18px; height: 18px; cursor: pointer;">
+                                            <span class="nombre-hijo-filtro" style="font-size: 0.95rem; color: #444;">🎒 <?php echo htmlspecialchars($u['nombre']); ?></span>
+                                        </label>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                                
+                                <?php if (!$hay_alumnos): ?>
+                                    <p style="color: #999; font-size: 0.85rem; text-align: center; margin: 10px 0;">No hay alumnos registrados en el sistema todavía.</p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="campos-catedra" style="grid-column: 1 / -1; display: none; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div class="input-group" style="grid-column: 1 / -1; margin-top: 10px; border-top: 1px dashed #eee; padding-top: 15px;">
-                            <strong style="color: var(--azul-primario); font-size: 0.9rem;">Asignación de Cátedra (Solo si el perfil es Docente)</strong>
+                            <strong style="color: var(--azul-primario); font-size: 0.9rem;">Asignación de Cátedra (Personal Docente)</strong>
                         </div>
-
                         <div class="input-group">
                             <label>Nivel Educativo</label>
                             <select name="nivel_asig" id="select-nivel-asig" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
@@ -2306,7 +2426,6 @@ $oferta_cursos = [
                                 <option value="primaria">Primaria</option>
                             </select>
                         </div>
-
                         <div class="input-group">
                             <label>Curso / Año</label>
                             <select name="curso_asig" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
@@ -2324,7 +2443,6 @@ $oferta_cursos = [
                                 <option value="1_grado">1° Grado (Primaria)</option>
                             </select>
                         </div>
-
                         <div class="input-group">
                             <label>División</label>
                             <select name="division_asig" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
@@ -2333,7 +2451,6 @@ $oferta_cursos = [
                                 <option value="C">C</option>
                             </select>
                         </div>
-
                         <div class="input-group" id="grupo-materia-asig" style="grid-column: 1 / -1;">
                             <label>Materia a dictar</label>
                             <select name="materia_asig" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
@@ -2355,6 +2472,7 @@ $oferta_cursos = [
                             </select>
                         </div>
                     </div>
+
                 </div>
                 
                 <div class="modal-footer">
@@ -2675,6 +2793,8 @@ $oferta_cursos = [
                 modalUsuarios.classList.remove('modal-activo');
                 if(camposCatedra) camposCatedra.style.display = 'none';
                 if(camposAlumno) camposAlumno.style.display = 'none';
+                if(camposTutor) camposTutor.style.display = 'none';
+                if(selectRol) selectRol.value = ""; // Reiniciamos el selector
             }
 
             btnCerrarUsuario.addEventListener('click', cerrarModalUsuario);
@@ -2693,27 +2813,30 @@ $oferta_cursos = [
         const selectRol = document.getElementById('select-rol');
         const camposCatedra = document.getElementById('campos-catedra');
         const camposAlumno = document.getElementById('campos-alumno');
+        const camposTutor = document.getElementById('campos-tutor'); // <--- NUEVO
         const grupoMateriaAsig = document.getElementById('grupo-materia-asig');
         const selectNivelAsig = document.getElementById('select-nivel-asig');
         const selectMateriaAsig = document.querySelector('select[name="materia_asig"]');
 
         if (selectRol) {
             selectRol.addEventListener('change', () => {
+                // Primero apagamos todos los paneles especiales por defecto
+                if(camposCatedra) camposCatedra.style.display = 'none';
+                if(camposAlumno) camposAlumno.style.display = 'none';
+                if(camposTutor) camposTutor.style.display = 'none';
+
+                // Prendemos solo el que corresponde
                 if (selectRol.value === 'profesor') {
                     if(camposCatedra) camposCatedra.style.display = 'grid';
-                    if(camposAlumno) camposAlumno.style.display = 'none';
                     if(grupoMateriaAsig) grupoMateriaAsig.style.display = (selectNivelAsig && selectNivelAsig.value === 'primaria') ? 'none' : 'flex';
                 } else if (selectRol.value === 'preceptor') {
                     if(camposCatedra) camposCatedra.style.display = 'grid';
-                    if(camposAlumno) camposAlumno.style.display = 'none';
-                    if(grupoMateriaAsig) grupoMateriaAsig.style.display = 'none'; // El preceptor no elige materia
-                    if(selectNivelAsig) selectNivelAsig.value = 'secundaria'; // Forzamos secundaria
+                    if(grupoMateriaAsig) grupoMateriaAsig.style.display = 'none'; 
+                    if(selectNivelAsig) selectNivelAsig.value = 'secundaria'; 
                 } else if (selectRol.value === 'alumno') {
-                    if(camposCatedra) camposCatedra.style.display = 'none';
                     if(camposAlumno) camposAlumno.style.display = 'grid';
-                } else {
-                    if(camposCatedra) camposCatedra.style.display = 'none';
-                    if(camposAlumno) camposAlumno.style.display = 'none';
+                } else if (selectRol.value === 'tutor') {
+                    if(camposTutor) camposTutor.style.display = 'grid'; // <--- Mostramos la asignación del hijo
                 }
             });
         }
@@ -2729,6 +2852,24 @@ $oferta_cursos = [
                 } else {
                     grupoMateriaAsig.style.display = 'flex'; // Lo vuelve a mostrar
                 }
+            });
+        }
+        // --- MOTOR DE BÚSQUEDA PARA ASIGNAR HIJOS ---
+        const buscadorHijos = document.getElementById('buscador-hijos');
+        const listaItemsHijos = document.querySelectorAll('.item-hijo');
+
+        if (buscadorHijos) {
+            buscadorHijos.addEventListener('input', function(e) {
+                const textoBuscado = e.target.value.toLowerCase();
+                
+                listaItemsHijos.forEach(label => {
+                    const nombreAlumno = label.querySelector('.nombre-hijo-filtro').textContent.toLowerCase();
+                    if (nombreAlumno.includes(textoBuscado)) {
+                        label.style.display = 'flex';
+                    } else {
+                        label.style.display = 'none';
+                    }
+                });
             });
         }
     </script>

@@ -43,6 +43,12 @@
                 "examen": "1er Prueba",
                 "nota": 7
             }
+        ],
+        "Matemática": [
+            {
+                "examen": "TP",
+                "nota": 6
+            }
         ]
     },
     "Jose Ojeda": {

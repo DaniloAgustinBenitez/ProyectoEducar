@@ -707,6 +707,13 @@
             "division": "B",
             "materia": "Preceptor\/a",
             "turno": "Mañana"
+        },
+        {
+            "nivel": "secundaria",
+            "curso": "2_anio",
+            "division": "A",
+            "turno": "Mañana",
+            "materia": "Preceptor\/a"
         }
     ]
 }

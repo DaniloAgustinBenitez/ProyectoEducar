@@ -256,5 +256,11 @@
         "password": "123",
         "rol": "preceptor",
         "nombre": "precep1"
+    },
+    {
+        "nombre": "Gustavo Mongelo",
+        "usuario": "gmongelo",
+        "password": "123",
+        "rol": "tutor"
     }
 ]

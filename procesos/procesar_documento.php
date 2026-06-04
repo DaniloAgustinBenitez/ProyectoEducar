@@ -7,33 +7,44 @@ if (!isset($_SESSION['usuario'])) {
 }
 
 $usuario_actual = $_SESSION['usuario'];
+$rol_actual = $_SESSION['rol'] ?? 'alumno';
 
-// Buscamos el nombre COMPLETO del alumno
-$archivo_usuarios = __DIR__ . '/../data/usuarios.json';
-$todos_usuarios = file_exists($archivo_usuarios) ? json_decode(file_get_contents($archivo_usuarios), true) : [];
-$nombre_alumno = $usuario_actual;
-foreach ($todos_usuarios as $u) {
-    if ($u['usuario'] === $usuario_actual) {
-        $nombre_alumno = $u['nombre'];
-        break;
+// 1. DETERMINAMOS EL DUEÑO DEL DOCUMENTO
+$nombre_alumno = '';
+
+if ($rol_actual === 'tutor') {
+    // Si es tutor, leemos el input oculto que mandamos desde el dashboard
+    $nombre_alumno = trim($_POST['alumno_destino'] ?? '');
+} else {
+    // Si es alumno, buscamos su propio nombre en la base de datos
+    $archivo_usuarios = __DIR__ . '/../data/usuarios.json';
+    $todos_usuarios = file_exists($archivo_usuarios) ? json_decode(file_get_contents($archivo_usuarios), true) : [];
+    $nombre_alumno = $usuario_actual; // Fallback de emergencia
+    foreach ($todos_usuarios as $u) {
+        if ($u['usuario'] === $usuario_actual) {
+            $nombre_alumno = $u['nombre'];
+            break;
+        }
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_doc'])) {
+// 2. PROCESAMOS EL ARCHIVO
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_doc']) && !empty($nombre_alumno)) {
     $tipo_doc = $_POST['tipo_doc'] ?? 'Documento';
     
-    // Creamos la carpeta "uploads" automáticamente si no existe
-    $directorio_subidas = __DIR__ . '/../uploads/';
-    if (!file_exists($directorio_subidas)) {
-        mkdir($directorio_subidas, 0777, true);
+    // Rutas protegidas (subimos un nivel porque estamos en la carpeta procesos/)
+    $directorio_subidas_fisico = __DIR__ . '/../uploads/';
+    if (!file_exists($directorio_subidas_fisico)) {
+        mkdir($directorio_subidas_fisico, 0777, true);
     }
 
-    // Le ponemos la hora al nombre del archivo para que no se sobreescriban
     $nombre_archivo = time() . "_" . basename($_FILES['archivo_doc']['name']);
-    $ruta_destino_fisica = $directorio_subidas . $nombre_archivo;
-    $ruta_destino_db = 'uploads/' . $nombre_archivo;
+    $ruta_destino = $directorio_subidas_fisico . $nombre_archivo;
+    
+    // Esta es la ruta que se guarda en el JSON para que el navegador la encuentre (desde la raíz)
+    $ruta_web = 'uploads/' . $nombre_archivo; 
 
-    if (move_uploaded_file($_FILES['archivo_doc']['tmp_name'], $ruta_destino_fisica)) {
+    if (move_uploaded_file($_FILES['archivo_doc']['tmp_name'], $ruta_destino)) {
         
         $archivo_docs = __DIR__ . '/../data/documentos.json';
         $docs = file_exists($archivo_docs) ? json_decode(file_get_contents($archivo_docs), true) : [];
@@ -42,20 +53,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_doc'])) {
             $docs[$nombre_alumno] = [];
         }
 
-        // MAGIA: Si es un certificado de falta O un permiso de retiro, lo sumamos al historial.
+        // MAGIA: Si es infinito, lo apilamos. Si es único, lo reemplazamos.
         if ($tipo_doc === 'Certificado Médico / Justificación de Falta' || $tipo_doc === 'Permiso de Retiro') {
             if (!isset($docs[$nombre_alumno][$tipo_doc]) || !is_array($docs[$nombre_alumno][$tipo_doc])) {
                 $docs[$nombre_alumno][$tipo_doc] = [];
             }
             $docs[$nombre_alumno][$tipo_doc][] = [
-                'fecha' => date('d-m-Y H:i'), // Guardamos con hora
-                'archivo' => $ruta_destino_db
+                'fecha' => date('d-m-Y H:i'),
+                'archivo' => $ruta_web
             ];
         } else {
-            // Si es DNI o Apto Físico, es único y se sobreescribe
             $docs[$nombre_alumno][$tipo_doc] = [
                 'fecha' => date('d-m-Y'),
-                'archivo' => $ruta_destino_db
+                'archivo' => $ruta_web
             ];
         }
 
@@ -63,6 +73,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_doc'])) {
     }
 }
 
-header('Location: ../dashboard.php?vista=vista-documentacion');
+// 3. REDIRIGIMOS AL DASHBOARD (Manteniendo al hijo seleccionado en la URL)
+$url_retorno = '../dashboard.php?vista=vista-documentacion';
+if ($rol_actual === 'tutor' && !empty($nombre_alumno)) {
+    $url_retorno .= '&hijo=' . urlencode($nombre_alumno);
+}
+
+header('Location: ' . $url_retorno);
 exit;
 ?>

@@ -715,5 +715,14 @@
             "turno": "Mañana",
             "materia": "Preceptor\/a"
         }
+    ],
+    "Jimena Perez": [
+        {
+            "nivel": "secundaria",
+            "curso": "3_anio",
+            "division": "C",
+            "materia": "Matemática",
+            "turno": "Mañana"
+        }
     ]
 }

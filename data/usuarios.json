@@ -168,12 +168,6 @@
         "nombre": "Javier Gomez"
     },
     {
-        "usuario": "jperez",
-        "password": "123",
-        "rol": "profesor",
-        "nombre": "Jimena Perez"
-    },
-    {
         "usuario": "amongelo",
         "password": "123",
         "rol": "alumno",
@@ -262,5 +256,17 @@
         "usuario": "gmongelo",
         "password": "123",
         "rol": "tutor"
+    },
+    {
+        "nombre": "Jimena Perez",
+        "usuario": "jperez",
+        "password": "123",
+        "rol": "profesor"
+    },
+    {
+        "nombre": "Santiago Perez",
+        "usuario": "sperez",
+        "password": "123",
+        "rol": "alumno"
     }
 ]

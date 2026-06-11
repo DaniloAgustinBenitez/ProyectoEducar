@@ -58,5 +58,13 @@
                 "nota": 1
             }
         ]
+    },
+    "Santiago Perez": {
+        "Matemática": [
+            {
+                "examen": "1er Prueba",
+                "nota": 1
+            }
+        ]
     }
 }

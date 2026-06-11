@@ -945,8 +945,6 @@ $oferta_cursos = [
             <span class="section-title" style="border-top: 1px solid #eee; padding-top: 15px;">Administrativo</span>
             <a href="#" class="nav-item menu-activo" data-vista="vista-usuarios"><i>👥</i> <span>Gestión de Usuarios</span></a>
             <a href="#" class="nav-item" data-vista="vista-cursos"><i>📚</i> <span>Asignación de Cátedras</span></a>
-            <a href="#" class="nav-item" data-vista="vista-cuotas"><i>💰</i> <span>Cobro de Cuotas</span></a>
-            <a href="#" class="nav-item" data-vista="vista-sueldos"><i>💵</i> <span>Liquidación de Sueldos</span></a>
             <a href="#" class="nav-item" data-vista="vista-comedor"><i>🥗</i> <span>Comedor</span></a>
             <a href="#" class="nav-item" data-vista="vista-transporte"><i>🚌</i> <span>Rutas de Transporte</span></a>
             <a href="#" class="nav-item" data-vista="vista-mantenimiento"><i>🛠️</i> <span>Mantenimiento</span></a>
@@ -975,16 +973,18 @@ $oferta_cursos = [
 
             <div class="dashboard-grid">
                 
-                <?php if (!$es_profesor): ?>
+                <?php if ($es_tutor): ?>
                 <div class="stat-card">
                     <h3>Subir Nuevo Documento</h3>
                     
                     <form action="procesos/procesar_documento.php" method="POST" enctype="multipart/form-data" style="margin-top: 15px;">
+                        
+                        <input type="hidden" name="alumno_destino" value="<?php echo htmlspecialchars($alumno_seleccionado); ?>">
+
                         <label for="tipo-doc" style="display:block; margin-bottom: 5px; font-weight: bold;">Tipo de documento:</label>
                         <select name="tipo_doc" id="tipo-doc" required style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #ddd;">
                             <option value="" disabled selected>Elegí qué vas a subir...</option>
                             <?php foreach ($tipos_permitidos as $tipo): ?>
-                                <!-- Certificados y Permisos SIEMPRE aparecen. Los demás desaparecen si ya se subieron -->
                                 <?php if ($tipo === 'Certificado Médico / Justificación de Falta' || $tipo === 'Permiso de Retiro' || !isset($mis_documentos[$tipo])): ?>
                                     <option value="<?php echo htmlspecialchars($tipo); ?>"><?php echo htmlspecialchars($tipo); ?></option>
                                 <?php endif; ?>
@@ -997,7 +997,7 @@ $oferta_cursos = [
                 </div>
                 <?php endif; ?>
 
-                <div class="stat-card" <?php echo $es_profesor ? 'style="grid-column: 1 / -1;"' : ''; ?>>
+                <div class="stat-card" <?php echo (!$es_tutor) ? 'style="grid-column: 1 / -1;"' : ''; ?>>
                     <h3>Documentos Entregados</h3>
                     <ul style="list-style: none; padding: 0; margin-top: 15px;">
                         <?php foreach ($tipos_permitidos as $tipo): ?>
@@ -1005,7 +1005,6 @@ $oferta_cursos = [
                                 <?php if ($tipo === 'Certificado Médico / Justificación de Falta' || $tipo === 'Permiso de Retiro'): ?>
                                     
                                     <?php 
-                                    // MAGIA DE COMPATIBILIDAD: Si es un archivo viejo (no es una lista), lo envolvemos en una lista para que no rompa el código
                                     $lista_docs = isset($mis_documentos[$tipo]['fecha']) ? [$mis_documentos[$tipo]] : $mis_documentos[$tipo];
                                     ?>
                                     
@@ -1671,7 +1670,6 @@ $oferta_cursos = [
 
         <section id="vista-usuarios" class="vista-panel <?php echo $es_admin ? 'vista-activa' : ''; ?>">
             <header class="top-bar" style="flex-direction: column; align-items: stretch; gap: 15px;">
-                
                 <?php if (isset($_GET['error']) && $_GET['error'] === 'duplicado'): ?>
                     <div style="background: #fce8e6; color: var(--naranja); padding: 12px; border-radius: 8px; font-weight: bold;">
                         ⚠️ El nombre de usuario de login ya se encuentra registrado. Elegí otro.
@@ -1684,10 +1682,22 @@ $oferta_cursos = [
                     </div>
                 <?php endif; ?>
 
+                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'usuario_modificado'): ?>
+                    <div style="background: #e1f5fe; color: var(--azul-primario); padding: 12px; border-radius: 8px; font-weight: bold;">
+                        ⚙️ ¡Credenciales actualizadas con éxito!
+                    </div>
+                <?php endif; ?>
+
+                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'usuario_eliminado'): ?>
+                    <div style="background: #fff5f2; color: var(--naranja); padding: 12px; border-radius: 8px; font-weight: bold;">
+                        🗑️ El usuario ha sido removido por completo del sistema.
+                    </div>
+                <?php endif; ?>
+
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div class="user-welcome">
                         <h1>Gestión de Usuarios</h1>
-                        <p style="color: #666;">Administración de perfiles y credenciales de acceso al sistema.</p>
+                        <p style="color: #666;">Administración integral, separación por roles y modificación de credenciales de acceso.</p>
                     </div>
                     <div class="user-profile">
                         <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
@@ -1696,199 +1706,165 @@ $oferta_cursos = [
                 </div>
             </header>
 
-            <div class="dashboard-grid">
-                <div class="stat-card" style="grid-column: 1 / -1; border-left-color: var(--violeta);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3>Usuarios Registrados en el Sistema</h3>
-                        
-                        <button type="button" class="btn-nuevo" id="btn-abrir-usuarios" style="background-color: var(--azul-primario); display: flex; align-items: center; gap: 8px;">
+            <?php
+            // --- CEREBRO CLASIFICADOR DE USUARIOS ---
+            $usuarios_alumnos = [];
+            $usuarios_profesores = [];
+            $usuarios_maestros = [];
+            $usuarios_preceptores = [];
+            $usuarios_tutores = [];
+            $usuarios_admins = [];
+
+            foreach ($todos_los_usuarios as $u) {
+                $rol_u = $u['rol'] ?? '';
+                if ($rol_u === 'alumno') {
+                    $encontrado_curso = 'Sin Curso Asignado';
+                    foreach ($alumnos_por_curso as $clave_c => $lista_al) {
+                        if (in_array($u['nombre'], $lista_al)) {
+                            $encontrado_curso = $clave_c;
+                            break;
+                        }
+                    }
+                    $usuarios_alumnos[$encontrado_curso][] = $u;
+                } elseif ($rol_u === 'profesor') {
+                    $es_de_primaria = false;
+                    if (isset($asignaciones_totales[$u['nombre']])) {
+                        foreach ($asignaciones_totales[$u['nombre']] as $asig) {
+                            if (($asig['nivel'] ?? '') === 'primaria') {
+                                $es_de_primaria = true;
+                                break;
+                            }
+                        }
+                    }
+                    if ($es_de_primaria) {
+                        $usuarios_maestros[] = $u;
+                    } else {
+                        $usuarios_profesores[] = $u;
+                    }
+                } elseif ($rol_u === 'preceptor') {
+                    $usuarios_preceptores[] = $u;
+                } elseif ($rol_u === 'tutor') {
+                    $usuarios_tutores[] = $u;
+                } elseif ($rol_u === 'admin') {
+                    $usuarios_admins[] = $u;
+                }
+            }
+            ksort($usuarios_alumnos); // Ordenamos los cursos de forma alfabética
+            ?>
+
+            <div class="dashboard-grid" style="grid-template-columns: 1fr;">
+                <div class="stat-card" style="border-left-color: var(--violeta);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                        <h3>Árbol de Cuentas Institucionales</h3>
+                        <button type="button" class="btn-nuevo" id="btn-abrir-usuarios" style="background-color: var(--violeta); display: flex; align-items: center; gap: 8px;">
                             👥 Registrar Nuevo Usuario
                         </button>
                     </div>
 
-                    <p style="color: #888;">Acá próximamente cargaremos la tabla con la lista de usuarios...</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="vista-cuotas" class="vista-panel">
-            <header class="top-bar">
-                <div class="user-welcome">
-                    <h1>Cobro de Cuotas</h1>
-                    <p style="color: #666;">Control individual y registro de pago de matrículas de alumnos.</p>
-                </div>
-                <div class="user-profile">
-                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
-                    <div class="user-avatar"><?php echo $iniciales; ?></div>
-                </div>
-            </header>
-
-            <div class="dashboard-grid">
-                <div class="stat-card" style="grid-column: 1 / -1;">
-                    <h3>Aranceles y Estados de Cuenta</h3>
-                    <div style="display: flex; gap: 15px; margin-bottom: 25px; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
-                        <input type="text" id="buscador-alumnos" placeholder="🔍 Buscar alumno por apellido o nombre..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
-                        
-                        <select id="filtro-deuda" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; cursor: pointer;">
-                            <option value="todos">Mostrar Todos</option>
-                            <option value="con-deuda">⚠️ Solo con Deuda</option>
-                            <option value="al-dia">✅ Al Día</option>
-                        </select>
-                    </div>
-                    <p style="margin-bottom: 20px; color: #666;">Seguimiento individualizado por nivel académico y división.</p>
-                    
-                    <details class="acordeon-materia">
-                        <summary>Nivel Inicial</summary>
-                        <div class="acordeon-contenido">
-                            <details style="margin-left:15px;">
-                                <summary>Sala de 5 "Verde"</summary>
-                                <div style="padding:10px;">
-                                    <details class="estado-al-dia"style="margin-bottom:10px;">
-                                        <summary>López, Benjamín</summary>
-                                        <div style="padding:10px; background:#f9f9f9; border-radius:8px;">
-                                            <p>Deuda: <span class="badge badge-aprobado">$0 (Al día)</span></p>
-                                            <button class="btn-nuevo" style="font-size:0.7rem; margin-top: 10px;">+ Registrar Pago</button>
+                    <details class="acordeon-materia" style="border-left-color: var(--verde); margin-bottom: 15px;">
+                        <summary style="font-weight: bold; color: #333;">🎒 Alumnos (Agrupados por Curso y División)</summary>
+                        <div class="acordeon-contenido" style="background: white; padding: 15px;">
+                            <?php if (empty($usuarios_alumnos)): ?>
+                                <p style="color:#999; text-align:center;">No hay alumnos registrados.</p>
+                            <?php else: ?>
+                                <?php foreach ($usuarios_alumnos as $clave_curso => $lista_de_alumnos): 
+                                    $label_curso = str_replace(['_anio', '_grado', '_'], ['° Año', '° Grado', ' '], $clave_curso);
+                                ?>
+                                    <details style="margin-bottom: 10px; border: 1px solid #eee; border-radius: 6px;">
+                                        <summary style="padding: 10px; background: #fafafa; font-weight: 600; cursor: pointer; color: var(--azul-primario);">
+                                            🏫 Cursos: <?php echo $label_curso; ?> (<?php echo count($lista_de_alumnos); ?> Alumnos)
+                                        </summary>
+                                        <div style="padding: 10px; overflow-x: auto;">
+                                            <table class="tabla-datos">
+                                                <thead>
+                                                    <tr><th>Nombre Completo</th><th>Usuario (Login)</th><th>Contraseña</th><th style="text-align:right;">Acciones</th></tr>
+                                                </thead>
+                                                <tbody>
+                                                    <?php foreach ($lista_de_alumnos as $alu): ?>
+                                                        <tr>
+                                                            <td><strong><?php echo htmlspecialchars($alu['nombre']); ?></strong></td>
+                                                            <td><code><?php echo htmlspecialchars($alu['usuario']); ?></code></td>
+                                                            <td><code><?php echo htmlspecialchars($alu['password']); ?></code></td>
+                                                            <td style="text-align:right;">
+                                                                <div class="acciones-celda" style="justify-content: flex-end;">
+                                                                    <button type="button" class="btn-accion btn-editar-usuario" data-nombre="<?php echo htmlspecialchars($alu['nombre']); ?>" data-usuario="<?php echo htmlspecialchars($alu['usuario']); ?>" data-password="<?php echo htmlspecialchars($alu['password']); ?>">✏️ Modificar</button>
+                                                                    <form action="procesos/eliminar_usuario.php" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar a este alumno? Esto limpiará sus accesos.');" style="margin:0;">
+                                                                        <input type="hidden" name="usuario_id" value="<?php echo htmlspecialchars($alu['usuario']); ?>">
+                                                                        <button type="submit" class="btn-accion" style="color:var(--naranja); border-color:var(--naranja);">🗑️ Borrar</button>
+                                                                    </form>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    <?php endforeach; ?>
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </details>
-                                </div>
-                            </details>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
                     </details>
 
-                    <details class="acordeon-materia">
-                        <summary>Nivel Primario</summary>
-                        <div class="acordeon-contenido">
-                            <details style="margin-left:15px;">
-                                <summary>3er Grado "B"</summary>
-                                <div style="padding:10px;">
-                                    <details class="estado-con-deuda" style="margin-bottom:10px;">
-                                        <summary>Pérez, Julieta</summary>
-                                        <div style="padding:10px; background:#f9f9f9; border-radius:8px;">
-                                            <p>Deuda: <span class="badge badge-pendiente">$12.000</span></p>
-                                            <button class="btn-nuevo" style="font-size:0.7rem; margin-top: 10px; background-color: var(--naranja);">+ Registrar Pago</button>
-                                        </div>
-                                    </details>
-                                </div>
-                            </details>
+                    <?php
+                    function dibujarTablaUsuarios($lista, $titulo_singular, $color_borde) {
+                        if (empty($lista)) {
+                            echo '<p style="color:#999; padding: 10px;">No hay personal registrado en esta categoría.</p>';
+                        } else {
+                            echo '<div style="overflow-x:auto;"><table class="tabla-datos"><thead><tr><th>Nombre Completo</th><th>Usuario (Login)</th><th>Contraseña</th><th style="text-align:right;">Acciones</th></tr></thead><tbody>';
+                            foreach ($lista as $usr_item) {
+                                echo '<tr>';
+                                echo '<td><strong>'.htmlspecialchars($usr_item['nombre']).'</strong></td>';
+                                echo '<td><code>'.htmlspecialchars($usr_item['usuario']).'</code></td>';
+                                echo '<td><code>'.htmlspecialchars($usr_item['password']).'</code></td>';
+                                echo '<td style="text-align:right;"><div class="acciones-celda" style="justify-content: flex-end;">';
+                                echo '<button type="button" class="btn-accion btn-editar-usuario" data-nombre="'.htmlspecialchars($usr_item['nombre']).'" data-usuario="'.htmlspecialchars($usr_item['usuario']).'" data-password="'.htmlspecialchars($usr_item['password']).'">✏️ Modificar</button>';
+                                echo '<form action="procesos/eliminar_usuario.php" method="POST" onsubmit="return confirm(\'¿Eliminar por completo a este usuario?\');" style="margin:0;">';
+                                echo '<input type="hidden" name="usuario_id" value="'.htmlspecialchars($usr_item['usuario']).'">';
+                                echo '<button type="submit" class="btn-accion" style="color:var(--naranja); border-color:var(--naranja);">🗑️ Borrar</button>';
+                                echo '</form>';
+                                echo '</div></td>';
+                                echo '</tr>';
+                            }
+                            echo '</tbody></table></div>';
+                        }
+                    }
+                    ?>
+
+                    <details class="acordeon-materia" style="border-left-color: var(--rosa); margin-bottom: 15px;">
+                        <summary style="font-weight: bold; color: #333;">📚 Personal Docente (Nivel Secundario)</summary>
+                        <div class="acordeon-contenido" style="background: white; padding: 15px;">
+                            <?php dibujarTablaUsuarios($usuarios_profesores, 'Profesor', 'var(--rosa)'); ?>
                         </div>
                     </details>
 
-                    <details class="acordeon-materia">
-                        <summary>Nivel Secundario</summary>
-                        <div class="acordeon-contenido">
-                            <details style="margin-left:15px;">
-                                <summary>5to Año "A"</summary>
-                                <div style="padding:10px;">
-                                    <details class="estado-al-dia" style="margin-bottom:10px;">
-                                        <summary>Giménez, Martina</summary>
-                                        <div style="padding:10px; background:#f9f9f9; border-radius:8px;">
-                                            <p>Deuda: <span class="badge badge-aprobado">$0 (Al día)</span></p>
-                                            <button class="btn-nuevo" style="font-size:0.7rem; margin-top: 10px;">+ Registrar Pago</button>
-                                        </div>
-                                    </details>
-                                    <details class="estado-con-deuda">
-                                        <summary>Álvarez, Lucas</summary>
-                                        <div style="padding:10px; background:#f9f9f9; border-radius:8px;">
-                                            <p>Deuda: <span class="badge badge-pendiente">$15.000</span></p>
-                                            <button class="btn-nuevo" style="font-size:0.7rem; margin-top: 10px; background-color: var(--naranja);">+ Registrar Pago</button>
-                                        </div>
-                                    </details>
-                                </div>
-                            </details>
-                        </div>
-                    </details>
-                </div>
-            </div>
-        </section>
-
-        <section id="vista-sueldos" class="vista-panel">
-            <header class="top-bar">
-                <div class="user-welcome">
-                    <h1>Liquidación de Sueldos</h1>
-                    <p style="color: #666;">Gestión de haberes y recibos digitales del personal de la institución.</p>
-                </div>
-                <div class="user-profile">
-                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
-                    <div class="user-avatar"><?php echo $iniciales; ?></div>
-                </div>
-            </header>
-
-            <div class="dashboard-grid">
-                <div class="stat-card" style="grid-column: 1 / -1;">
-                    <h3>Haberes del Mes en Curso</h3>
-                    <p style="margin-bottom: 20px; color: #666;">Control de depósitos y emisión de órdenes de pago para personal docente y no docente.</p>
-                <div style="display: flex; gap: 15px; margin-bottom: 25px; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
-                        <input type="text" id="buscador-empleados" placeholder="🔍 Buscar empleado por apellido o nombre..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
-                        
-                        <select id="filtro-sueldos" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; cursor: pointer;">
-                            <option value="todos">Mostrar Todos</option>
-                            <option value="pendiente">⚠️ Pendiente de Pago</option>
-                            <option value="liquidado">✅ Sueldo Liquidado</option>
-                        </select>
-                    </div>
-                    <details class="acordeon-materia" name="grupo-sueldos">
-                        <summary>Personal Docente</summary>
-                        <div class="acordeon-contenido">
-                            <details style="margin-left:15px; margin-bottom:10px;" name="grupo-docentes">
-                                <summary>Nivel Inicial</summary>
-                                <div style="padding:10px; border-left: 2px solid #eee;">
-                                    <details class="estado-liquidado" style="margin-bottom:10px;" name="empleado-inicial">
-                                        <summary>Ana García</summary>
-                                        <div style="padding:10px; background:#f9f9f9; border-radius:8px;">
-                                            <p>Estado: <span class="badge badge-aprobado">Sueldo Liquidado</span></p>
-                                            <button class="btn-nuevo" style="font-size:0.7rem; background-color: var(--rosa); margin-top: 10px;">Emitir Recibo Digital</button>
-                                        </div>
-                                    </details>
-                                    <details class="estado-pendiente" name="empleado-inicial">
-                                        <summary>Lucía Torres</summary>
-                                        <div style="padding:10px; background:#f9f9f9; border-radius:8px;">
-                                            <p>Estado: <span class="badge badge-pendiente">Pendiente de Pago</span></p>
-                                            <button class="btn-nuevo" style="font-size:0.7rem; background-color: var(--rosa); margin-top: 10px;">Registrar Pago de Sueldo</button>
-                                        </div>
-                                    </details>
-                                </div>
-                            </details>
-
-                            <details style="margin-left:15px; margin-bottom:10px;" name="grupo-docentes">
-                                <summary>Nivel Primario</summary>
-                                <div style="padding:10px; border-left: 2px solid #eee;">
-                                    <details class="estado-pendiente" name="empleado-primario">
-                                        <summary>Roberto Gómez</summary>
-                                        <div style="padding:10px; background:#f9f9f9; border-radius:8px;">
-                                            <p>Estado: <span class="badge badge-pendiente">Pendiente de Pago</span></p>
-                                            <button class="btn-nuevo" style="font-size:0.7rem; background-color: var(--rosa); margin-top: 10px;">Registrar Pago de Sueldo</button>
-                                        </div>
-                                    </details>
-                                </div>
-                            </details>
+                    <details class="acordeon-materia" style="border-left-color: var(--violeta); margin-bottom: 15px;">
+                        <summary style="font-weight: bold; color: #333;">🍏 Maestros/as de Grado (Nivel Primario)</summary>
+                        <div class="acordeon-contenido" style="background: white; padding: 15px;">
+                            <?php dibujarTablaUsuarios($usuarios_maestros, 'Maestro', 'var(--violeta)'); ?>
                         </div>
                     </details>
 
-                    <details class="acordeon-materia" name="grupo-sueldos">
-                        <summary>Preceptores</summary>
-                        <div class="acordeon-contenido">
-                            <details class="estado-liquidado" name="empleado-preceptor">
-                                <summary>Carlos Ruiz</summary>
-                                <div style="padding:10px; background:#f9f9f9; border-radius:8px;">
-                                    <p>Estado: <span class="badge badge-aprobado">Sueldo Liquidado</span></p>
-                                    <button class="btn-nuevo" style="font-size:0.7rem; background-color: var(--rosa); margin-top: 10px;">Emitir Recibo Digital</button>
-                                </div>
-                            </details>
+                    <details class="acordeon-materia" style="border-left-color: var(--celeste); margin-bottom: 15px;">
+                        <summary style="font-weight: bold; color: #333;">📋 Preceptores / Auxiliares</summary>
+                        <div class="acordeon-contenido" style="background: white; padding: 15px;">
+                            <?php dibujarTablaUsuarios($usuarios_preceptores, 'Preceptor', 'var(--celeste)'); ?>
                         </div>
                     </details>
 
-                    <details class="acordeon-materia" name="grupo-sueldos">
-                        <summary>Mantenimiento y Limpieza</summary>
-                        <div class="acordeon-contenido">
-                            <details class="estado-liquidado" name="empleado-limpieza">
-                                <summary>Ramona Sosa</summary>
-                                <div style="padding:10px; background:#f9f9f9; border-radius:8px;">
-                                    <p>Estado: <span class="badge badge-aprobado">Sueldo Liquidado</span></p>
-                                    <button class="btn-nuevo" style="font-size:0.7rem; background-color: var(--rosa); margin-top: 10px;">Emitir Recibo Digital</button>
-                                </div>
-                            </details>
+                    <details class="acordeon-materia" style="border-left-color: var(--naranja); margin-bottom: 15px;">
+                        <summary style="font-weight: bold; color: #333;">👨‍👩‍👧 Padres / Tutores Legales</summary>
+                        <div class="acordeon-contenido" style="background: white; padding: 15px;">
+                            <?php dibujarTablaUsuarios($usuarios_tutores, 'Tutor', 'var(--naranja)'); ?>
                         </div>
                     </details>
+
+                    <details class="acordeon-materia" style="border-left-color: #333; margin-bottom: 15px;">
+                        <summary style="font-weight: bold; color: #333;">⚙️ Equipo de Administración</summary>
+                        <div class="acordeon-contenido" style="background: white; padding: 15px;">
+                            <?php dibujarTablaUsuarios($usuarios_admins, 'Admin', '#333'); ?>
+                        </div>
+                    </details>
+
                 </div>
             </div>
         </section>
@@ -2249,6 +2225,7 @@ $oferta_cursos = [
         <?php endif; ?>
 
     </main>
+    
 
     <div class="modal-overlay" id="modal-talleres">
         <div class="modal-box">
@@ -2481,9 +2458,40 @@ $oferta_cursos = [
                 </div>
             </form>
         </div>
+    </div> <div class="modal-overlay" id="modal-editar-usuario">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Modificar Credenciales de Acceso</h2>
+                <button type="button" class="btn-cerrar-modal" id="btn-cerrar-editar-usuario">×</button>
+            </div>
+            <form action="procesos/modificar_usuario.php" method="POST" class="form-dashboard">
+                <input type="hidden" name="usuario_original" id="edit-usuario-original">
+                
+                <div class="form-grid">
+                    <div class="input-group" style="grid-column: 1 / -1;">
+                        <label>Nombre Completo del Perfil</label>
+                        <input type="text" id="edit-nombre-pantalla" readonly style="background-color: #eee; cursor: not-allowed; font-weight: bold; color: #555;">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Nombre de Usuario (Login)</label>
+                        <input type="text" name="nuevo_usuario" id="edit-usuario-login" required style="font-family: monospace;">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Contraseña de Acceso</label>
+                        <input type="text" name="nueva_password" id="edit-usuario-password" required style="font-family: monospace;">
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancelar" id="btn-cancelar-editar-usuario">Cancelar</button>
+                    <button type="submit" class="btn-guardar" style="background-color: var(--violeta);">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
     </div>
     <?php endif; ?>
-
     <script>
         //  MOTOR DEL MENÚ LATERAL 
         function toggleSidebar() {
@@ -2870,6 +2878,38 @@ $oferta_cursos = [
                         label.style.display = 'none';
                     }
                 });
+            });
+        }
+        // --- MOTOR DINÁMICO DEL MODAL DE EDICIÓN DE USUARIOS ---
+        const modalEditarUsuario = document.getElementById('modal-editar-usuario');
+        const btnCerrarEditar = document.getElementById('btn-cerrar-editar-usuario');
+        const btnCancelarEditar = document.getElementById('btn-cancelar-editar-usuario');
+
+        // Activación del modal y auto-relleno de datos
+        document.querySelectorAll('.btn-editar-usuario').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const nombre = btn.getAttribute('data-nombre');
+                const usuario = btn.getAttribute('data-usuario');
+                const password = btn.getAttribute('data-password');
+
+                document.getElementById('edit-usuario-original').value = usuario;
+                document.getElementById('edit-nombre-pantalla').value = nombre;
+                document.getElementById('edit-usuario-login').value = usuario;
+                document.getElementById('edit-usuario-password').value = password;
+
+                if (modalEditarUsuario) modalEditarUsuario.classList.add('modal-activo');
+            });
+        });
+
+        function cerrarModalEditar() {
+            if (modalEditarUsuario) modalEditarUsuario.classList.remove('modal-activo');
+        }
+
+        if (btnCerrarEditar) btnCerrarEditar.addEventListener('click', cerrarModalEditar);
+        if (btnCancelarEditar) btnCancelarEditar.addEventListener('click', cerrarModalEditar);
+        if (modalEditarUsuario) {
+            modalEditarUsuario.addEventListener('click', (e) => {
+                if (e.target === modalEditarUsuario) cerrarModalEditar();
             });
         }
     </script>

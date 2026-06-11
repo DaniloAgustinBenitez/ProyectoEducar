@@ -1,60 +1,83 @@
 <?php
-// Modo detective activo por seguridad
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
 session_start();
 
-// Solo el profesor gestiona reservas
-if (!isset($_SESSION['usuario']) || $_SESSION['usuario'] !== 'Profesor') {
-    die("<h1>Acceso Denegado</h1>");
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'profesor') {
+    header('Location: ../dashboard.php');
+    exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Capturamos la acción (por defecto será 'reservar')
-    $accion = $_POST['accion'] ?? 'reservar';
-    $espacio = $_POST['espacio']; 
-    $fecha_seleccionada = $_POST['fecha_reserva'];
-
+    $accion = $_POST['accion'] ?? '';
     $archivo_reservas = __DIR__ . '/../data/reservas.json';
-    $reservas = [];
+    
+    // Si no existe la carpeta, la creamos
+    if (!file_exists(__DIR__ . '/../data')) mkdir(__DIR__ . '/../data', 0777, true);
+    
+    $reservas = file_exists($archivo_reservas) ? json_decode(file_get_contents($archivo_reservas), true) : [];
 
-    if (file_exists($archivo_reservas)) {
-        $reservas = json_decode(file_get_contents($archivo_reservas), true) ?: [];
+    // --- LÓGICA PARA CREAR RESERVA ---
+    if ($accion === 'reservar') {
+        $espacio = trim($_POST['espacio'] ?? '');
+        $fecha = trim($_POST['fecha_reserva'] ?? ''); // Ej: 2026-05-15
+        $modulo = trim($_POST['modulo_reserva'] ?? '');
+
+        if (!empty($espacio) && !empty($fecha) && !empty($modulo)) {
+            
+            // 1. EL SISTEMA ANTI-CHOQUES: Revisamos si ya está ocupado
+            $choque = false;
+            foreach ($reservas as $r) {
+                if ($r['espacio'] === $espacio && $r['fecha'] === $fecha && $r['modulo'] === $modulo) {
+                    $choque = true;
+                    break;
+                }
+            }
+
+            // Si hay choque, lo rebotamos con un error
+            if ($choque) {
+                header('Location: ../dashboard.php?vista=vista-reservas&error=ocupado');
+                exit;
+            }
+
+            // 2. Buscamos el nombre real del profe
+            $archivo_usuarios = __DIR__ . '/../data/usuarios.json';
+            $usuarios = file_exists($archivo_usuarios) ? json_decode(file_get_contents($archivo_usuarios), true) : [];
+            $nombre_profe = $_SESSION['usuario'];
+            foreach ($usuarios as $u) {
+                if ($u['usuario'] === $_SESSION['usuario']) { 
+                    $nombre_profe = $u['nombre']; 
+                    break; 
+                }
+            }
+
+            // 3. Guardamos la reserva con un ID único
+            $reservas[] = [
+                'id' => uniqid('res_'),
+                'espacio' => $espacio,
+                'fecha' => $fecha,
+                'modulo' => $modulo,
+                'profesor' => $nombre_profe
+            ];
+            
+            file_put_contents($archivo_reservas, json_encode($reservas, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            header('Location: ../dashboard.php?vista=vista-reservas&msj=reservado');
+            exit;
+        }
     }
 
-    if ($accion === 'reservar') {
-        $profesor = $_SESSION['usuario'];
+    // --- LÓGICA PARA CANCELAR UNA RESERVA ---
+    if ($accion === 'eliminar') {
+        $id_borrar = $_POST['id_reserva'] ?? '';
         
-        // Validar si el horario ya está ocupado
-        foreach ($reservas as $reserva) {
-            if ($reserva['espacio'] === $espacio && $reserva['fecha'] === $fecha_seleccionada) {
-                die("<h1>Error</h1><p>Este horario ya está reservado. Elegí otro.</p><a href='../dashboard.php'>Volver</a>");
-            }
-        }
-
-        // Agregamos la reserva
-        $reservas[] = [
-            "profesor" => $profesor,
-            "espacio" => $espacio,
-            "fecha" => $fecha_seleccionada
-        ];
-        
-    } elseif ($accion === 'eliminar') {
-        // Filtramos el array dejando afuera la reserva que queremos borrar
-        $reservas = array_filter($reservas, function($r) use ($espacio, $fecha_seleccionada) {
-            // Devuelve true para todas las que NO coincidan con el espacio y fecha a borrar
-            return !($r['espacio'] === $espacio && $r['fecha'] === $fecha_seleccionada);
+        $reservas = array_filter($reservas, function($r) use ($id_borrar) {
+            return ($r['id'] ?? '') !== $id_borrar;
         });
         
-        // Reindexamos el array para que el JSON quede limpio
-        $reservas = array_values($reservas);
+        file_put_contents($archivo_reservas, json_encode(array_values($reservas), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        header('Location: ../dashboard.php?vista=vista-reservas&msj=eliminado');
+        exit;
     }
-
-    // Guardamos los cambios
-    file_put_contents($archivo_reservas, json_encode($reservas, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-
-    // Volvemos al panel
-    header('Location: ../dashboard.php?vista=vista-reservas');
-    exit;
 }
+
+header('Location: ../dashboard.php?vista=vista-reservas');
+exit;
 ?>

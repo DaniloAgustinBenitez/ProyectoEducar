@@ -48,6 +48,10 @@
             {
                 "examen": "TP",
                 "nota": 6
+            },
+            {
+                "examen": "TP (TP)",
+                "nota": "10"
             }
         ]
     },

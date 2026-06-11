@@ -115,7 +115,7 @@ if ($es_profesor) {
     }
 }
 
-// LÓGICA DE ASISTENCIAS (Agregalo acá abajo)
+// LÓGICA DE ASISTENCIAS 
 $archivo_asistencias = __DIR__ . '/data/asistencias.json';
 $todas_asistencias = file_exists($archivo_asistencias) ? json_decode(file_get_contents($archivo_asistencias), true) : [];
 
@@ -232,6 +232,10 @@ if (file_exists($archivo_talleres)) {
 // LÓGICA DE ASISTENCIAS 
 $archivo_asistencias = __DIR__ . '/data/asistencias.json';
 $todas_asistencias = file_exists($archivo_asistencias) ? json_decode(file_get_contents($archivo_asistencias), true) : [];
+
+// LÓGICA DE ACTIVIDADES (NUEVO)
+$archivo_actividades = __DIR__ . '/data/actividades.json';
+$todas_las_actividades = file_exists($archivo_actividades) ? json_decode(file_get_contents($archivo_actividades), true) : [];
 
 
 //LÓGICA PARA RESERVAS DE ESPACIOS 
@@ -710,6 +714,9 @@ $oferta_cursos = [
         #vista-calificaciones .stat-card { border-left-color: var(--rosa); }
         #vista-servicios .stat-card { border-left-color: var(--naranja); }
         #vista-talleres .stat-card { border-left-color: var(--verde); }
+        .nav-item[data-vista="vista-actividades"].menu-activo { color: var(--rosa); border-right: 4px solid var(--rosa); }
+        #vista-actividades .stat-card { border-left-color: var(--rosa); }
+        #vista-actividades .btn-nuevo { background-color: var(--rosa); }
         /* --- ESTILOS DEL ACORDEÓN DE CALIFICACIONES --- */
         .acordeon-materia {
             background: white;
@@ -919,6 +926,7 @@ $oferta_cursos = [
             <a href="#" class="nav-item" data-vista="vista-asistencia-alumno"><i>📅</i> <span>Asistencia</span></a>
             <a href="#" class="nav-item" data-vista="vista-servicios"><i>🚌</i> <span>Servicios</span></a>
             <a href="#" class="nav-item" data-vista="vista-talleres"><i>🏀</i> <span>Talleres y Deportes</span></a>
+            <a href="#" class="nav-item" data-vista="vista-actividades"><i>📝</i> <span>Actividades y Tareas</span></a>
         </div>
         <?php endif; ?>
 
@@ -928,6 +936,7 @@ $oferta_cursos = [
             <a href="#" class="nav-item menu-activo" data-vista="vista-gestion-aula"><i>🏫</i> <span>Gestión de Aula</span></a>
             <a href="#" class="nav-item" data-vista="vista-reservas"><i>🧪</i> <span>Reservas</span></a>
             <a href="#" class="nav-item" data-vista="vista-recursos-salud"><i>📂</i> <span>Recursos y Salud</span></a>
+            <a href="#" class="nav-item" data-vista="vista-actividades"><i>📝</i> <span>Actividades y Tareas</span></a>
         </div>
         <?php endif; ?>
         <?php if ($es_preceptor || $es_maestro_primaria): ?>
@@ -1288,6 +1297,185 @@ $oferta_cursos = [
             </div>
         </section>
 
+        <section id="vista-actividades" class="vista-panel">
+            <header class="top-bar">
+                <div class="user-welcome">
+                    <h1>Actividades y Tareas</h1>
+                    <p style="color: #666;">Espacio virtual de entrega de trabajos y devoluciones.</p>
+                </div>
+                <div class="user-profile">
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
+                    <div class="user-avatar"><?php echo $iniciales; ?></div>
+                </div>
+            </header>
+
+            <div class="dashboard-grid">
+                <?php if ($es_profesor): ?>
+                    <div style="grid-column: 1 / -1; margin-bottom: 20px;">
+                        <button class="btn-nuevo btn-abrir-crear-actividad" style="font-size: 1.1rem; padding: 12px 25px;">+ Crear Nueva Actividad</button>
+                    </div>
+
+                    <?php 
+                    $actividades_del_profe = array_filter($todas_las_actividades, function($a) use ($nombre_completo_actual) {
+                        return $a['profesor'] === $nombre_completo_actual;
+                    });
+
+                    if (empty($actividades_del_profe)): ?>
+                        <div class="stat-card" style="grid-column: 1 / -1;">
+                            <p style="text-align: center; color: #888;">No has creado ninguna actividad todavía.</p>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach (array_reverse($actividades_del_profe) as $act): 
+                            $fecha_cierre = strtotime($act['fecha_limite']);
+                            $esta_vencida = time() > $fecha_cierre;
+                        ?>
+                            <div class="stat-card" style="grid-column: 1 / -1; border-left: 5px solid <?php echo $esta_vencida ? 'var(--naranja)' : 'var(--rosa)'; ?>;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div>
+                                        <h3 style="margin-bottom: 5px;"><?php echo htmlspecialchars($act['titulo']); ?></h3>
+                                        <p style="color: #666; font-size: 0.9rem; font-weight: bold;">
+                                            📚 <?php echo htmlspecialchars($act['materia']); ?> (<?php echo htmlspecialchars(str_replace('_', ' ', $act['curso'])) . ' "' . htmlspecialchars($act['division']) . '"'; ?>)
+                                        </p>
+                                        <p style="font-size: 0.85rem; color: <?php echo $esta_vencida ? 'var(--naranja)' : 'var(--verde)'; ?>;">
+                                            ⏳ Cierre: <?php echo date('d/m/Y H:i', $fecha_cierre); ?>
+                                        </p>
+                                    </div>
+                                    <div style="display: flex; gap: 10px;">
+                                        <form action="procesos/procesar_actividad.php" method="POST" onsubmit="return confirm('¿Borrar esta actividad y todas sus entregas?');">
+                                            <input type="hidden" name="accion" value="borrar">
+                                            <input type="hidden" name="id_actividad" value="<?php echo htmlspecialchars($act['id']); ?>">
+                                            <button type="submit" class="btn-accion" style="color: var(--naranja); border-color: var(--naranja);">🗑️ Borrar</button>
+                                        </form>
+                                    </div>
+                                </div>
+                                
+                                <p style="margin-top: 15px; background: #f9f9f9; padding: 15px; border-radius: 6px; font-size: 0.95rem;">
+                                    <?php echo nl2br(htmlspecialchars($act['descripcion'])); ?>
+                                </p>
+                                
+                                <?php if (!empty($act['archivo_adjunto'])): ?>
+                                    <a href="<?php echo htmlspecialchars($act['archivo_adjunto']); ?>" target="_blank" class="btn-accion" style="display: inline-block; margin-top: 10px; border-color: var(--celeste); color: var(--celeste);">📎 Ver Material Adjunto</a>
+                                <?php endif; ?>
+
+                                <details style="margin-top: 20px; border: 1px solid #eee; border-radius: 6px; padding: 10px;">
+                                    <summary style="font-weight: bold; cursor: pointer; color: var(--azul-primario);">
+                                        📥 Ver Entregas de Alumnos (<?php echo count($act['entregas'] ?? []); ?> recibidas)
+                                    </summary>
+                                    <div style="margin-top: 15px;">
+                                        <?php if (empty($act['entregas'])): ?>
+                                            <p style="color: #999; font-size: 0.85rem;">Aún no hay entregas.</p>
+                                        <?php else: ?>
+                                            <table class="tabla-datos" style="font-size: 0.9rem;">
+                                                <thead><tr><th>Alumno</th><th>Fecha Entrega</th><th>Archivo/Texto</th><th>Devolución</th></tr></thead>
+                                                <tbody>
+                                                    <?php foreach ($act['entregas'] as $alu_nom => $entrega): ?>
+                                                        <tr>
+                                                            <td><strong><?php echo htmlspecialchars($alu_nom); ?></strong></td>
+                                                            <td><?php echo $entrega['fecha']; ?></td>
+                                                            <td>
+                                                                <?php if (!empty($entrega['archivo'])): ?>
+                                                                    <a href="<?php echo htmlspecialchars($entrega['archivo']); ?>" target="_blank">📎 Archivo</a><br>
+                                                                <?php endif; ?>
+                                                                <?php if (!empty($entrega['texto'])): ?>
+                                                                    <small><i>"<?php echo htmlspecialchars($entrega['texto']); ?>"</i></small>
+                                                                <?php endif; ?>
+                                                            </td>
+                                                            <td>
+                                                                <?php if (!empty($entrega['nota'])): ?>
+                                                                    <span class="badge badge-aprobado">Nota: <?php echo htmlspecialchars($entrega['nota']); ?></span>
+                                                                <?php else: ?>
+                                                                    <button class="btn-accion btn-corregir" data-id="<?php echo htmlspecialchars($act['id']); ?>" data-alumno="<?php echo htmlspecialchars($alu_nom); ?>" data-materia="<?php echo htmlspecialchars($act['materia']); ?>" style="color: var(--rosa); border-color: var(--rosa);">✏️ Evaluar</button>
+                                                                <?php endif; ?>
+                                                            </td>
+                                                        </tr>
+                                                    <?php endforeach; ?>
+                                                </tbody>
+                                            </table>
+                                        <?php endif; ?>
+                                    </div>
+                                </details>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+
+                <?php elseif ($es_alumno || $es_tutor): ?>
+                    <?php 
+                    $hay_tareas = false;
+                    foreach (array_reverse($todas_las_actividades) as $act):
+                        $clave_act = $act['curso'] . "_" . $act['division'];
+                        // Verificamos si la tarea es para alguno de los cursos en los que está el alumno
+                        if (in_array($clave_act, $mis_cursos_alumno ?? [])):
+                            $hay_tareas = true;
+                            $fecha_cierre = strtotime($act['fecha_limite']);
+                            $esta_vencida = time() > $fecha_cierre;
+                            
+                            // Revisamos si este alumno ya entregó
+                            $mi_entrega = $act['entregas'][$nombre_completo_actual] ?? null;
+                            $estado_color = 'var(--rosa)';
+                            $estado_texto = 'Pendiente';
+                            
+                            if ($mi_entrega) {
+                                $estado_color = 'var(--verde)';
+                                $estado_texto = 'Entregado';
+                            } elseif ($esta_vencida) {
+                                $estado_color = 'var(--naranja)';
+                                $estado_texto = 'Vencido';
+                            }
+                    ?>
+                        <div class="stat-card" style="border-left-color: <?php echo $estado_color; ?>;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <h3 style="margin-bottom: 5px;"><?php echo htmlspecialchars($act['titulo']); ?></h3>
+                                <span class="badge" style="background-color: <?php echo $estado_color; ?>; color: white;"><?php echo $estado_texto; ?></span>
+                            </div>
+                            <p style="color: var(--azul-primario); font-weight: bold; font-size: 0.9rem;">📚 <?php echo htmlspecialchars($act['materia']); ?></p>
+                            <p style="font-size: 0.85rem; color: #666; margin-top: 5px;">⏳ Vence: <?php echo date('d/m/Y H:i', $fecha_cierre); ?></p>
+                            
+                            <hr style="border: 0; border-top: 1px dashed #ddd; margin: 15px 0;">
+                            <p style="font-size: 0.95rem; line-height: 1.5;"><?php echo nl2br(htmlspecialchars($act['descripcion'])); ?></p>
+                            
+                            <?php if (!empty($act['archivo_adjunto'])): ?>
+                                <a href="<?php echo htmlspecialchars($act['archivo_adjunto']); ?>" target="_blank" class="btn-accion" style="display: inline-block; margin-top: 15px; border-color: var(--celeste); color: var(--celeste);">📎 Material Adjunto</a>
+                            <?php endif; ?>
+
+                            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
+                                <?php if ($mi_entrega): ?>
+                                    <div style="background: #f0fdf4; padding: 15px; border-radius: 6px; border: 1px solid #bbf7d0;">
+                                        <p style="color: #166534; font-weight: bold; margin-bottom: 5px;">✅ Tu entrega (<?php echo $mi_entrega['fecha']; ?>)</p>
+                                        <?php if (!empty($mi_entrega['archivo'])): ?>
+                                            <a href="<?php echo htmlspecialchars($mi_entrega['archivo']); ?>" target="_blank" style="font-size: 0.85rem;">Ver archivo subido</a><br>
+                                        <?php endif; ?>
+                                        
+                                        <?php if (!empty($mi_entrega['devolucion'])): ?>
+                                            <div style="margin-top: 10px; padding: 10px; background: white; border-left: 3px solid var(--azul-primario);">
+                                                <p style="font-size: 0.85rem; color: #555;"><strong>Devolución del profe:</strong><br> <?php echo htmlspecialchars($mi_entrega['devolucion']); ?></p>
+                                                <?php if (!empty($mi_entrega['nota'])): ?>
+                                                    <p style="font-size: 0.9rem; margin-top: 5px; color: var(--rosa); font-weight: bold;">Calificación: <?php echo htmlspecialchars($mi_entrega['nota']); ?></p>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <p style="font-size: 0.85rem; color: #666; margin-top: 10px;"><i>Esperando corrección del profesor...</i></p>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php elseif ($es_alumno && !$esta_vencida): ?>
+                                    <button class="btn-nuevo btn-abrir-entrega" data-id="<?php echo htmlspecialchars($act['id']); ?>" style="width: 100%;">Subir Entrega</button>
+                                <?php elseif ($es_tutor): ?>
+                                    <p style="color: #888; font-size: 0.85rem; text-align: center;">El alumno aún no ha entregado esta actividad.</p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php 
+                        endif;
+                    endforeach; 
+                    
+                    if (!$hay_tareas): ?>
+                        <div class="stat-card" style="grid-column: 1 / -1;">
+                            <p style="text-align: center; color: #888;">No hay actividades pendientes para este curso.</p>
+                        </div>
+                    <?php endif; ?>
+                <?php endif; ?>
+            </div>
+        </section>
+
         <section id="vista-gestion-aula" class="vista-panel <?php echo $es_profesor ? 'vista-activa' : ''; ?>">
             <header class="top-bar">
                 <div class="user-welcome">
@@ -1402,134 +1590,122 @@ $oferta_cursos = [
         </section>
 
         <section id="vista-reservas" class="vista-panel">
-            <header class="top-bar">
-                <div class="user-welcome">
-                    <h1>Reservas de Espacios</h1>
-                    <p style="color: #666;">Gestioná el uso de laboratorios y áreas deportivas.</p>
-                </div>
-                <div class="user-profile">
-                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
-                    <div class="user-avatar"><?php echo $iniciales; ?></div>
+            <header class="top-bar" style="flex-direction: column; align-items: stretch; gap: 15px;">
+                
+                <?php if (isset($_GET['error']) && $_GET['error'] === 'ocupado'): ?>
+                    <div style="background: #fff5f2; color: var(--naranja); padding: 12px; border-radius: 8px; font-weight: bold;">
+                        ⚠️ ¡Atención! El espacio ya se encuentra reservado por otro docente en ese mismo día y módulo. Elegí otro horario.
+                    </div>
+                <?php endif; ?>
+                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'reservado'): ?>
+                    <div style="background: #e6f6ec; color: var(--verde); padding: 12px; border-radius: 8px; font-weight: bold;">
+                        ✅ ¡Tu reserva ha sido confirmada y agendada con éxito!
+                    </div>
+                <?php endif; ?>
+                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'eliminado'): ?>
+                    <div style="background: #e1f5fe; color: var(--azul-primario); padding: 12px; border-radius: 8px; font-weight: bold;">
+                        🗑️ La reserva fue cancelada y el espacio vuelve a estar disponible.
+                    </div>
+                <?php endif; ?>
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="user-welcome">
+                        <h1>Reservas de Espacios</h1>
+                        <p style="color: #666;">Gestioná el uso de laboratorios y áreas deportivas evitando cruces de horarios.</p>
+                    </div>
+                    <div class="user-profile">
+                        <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
+                        <div class="user-avatar"><?php echo $iniciales; ?></div>
+                    </div>
                 </div>
             </header>
 
+            <?php 
+            // Función auxiliar para no repetir código HTML en cada tarjeta
+            function dibujarTarjetaReserva($titulo, $id_espacio, $es_profesor) {
+                ?>
+                <div class="stat-card">
+                    <h3><?php echo $titulo; ?></h3>
+                    <form action="procesos/procesar_reserva.php" method="POST">
+                        <input type="hidden" name="accion" value="reservar">
+                        <input type="hidden" name="espacio" value="<?php echo $id_espacio; ?>">
+                        
+                        <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 120px;">
+                                <label style="font-size: 0.8rem; color: #777; font-weight: bold;">Día:</label>
+                                <input type="date" name="fecha_reserva" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;" required min="<?php echo date('Y-m-d'); ?>">
+                            </div>
+                            <div style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 0.8rem; color: #777; font-weight: bold;">Módulo Horario:</label>
+                                <select name="modulo_reserva" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
+                                    <option value="" disabled selected>Elegir...</option>
+                                    <option value="1° Módulo (08:00 - 09:20)">1° Módulo (08:00 - 09:20)</option>
+                                    <option value="2° Módulo (09:30 - 10:50)">2° Módulo (09:30 - 10:50)</option>
+                                    <option value="3° Módulo (11:00 - 12:20)">3° Módulo (11:00 - 12:20)</option>
+                                    <option value="4° Módulo (13:30 - 14:50)">4° Módulo (13:30 - 14:50)</option>
+                                    <option value="5° Módulo (15:00 - 16:20)">5° Módulo (15:00 - 16:20)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <?php if ($es_profesor): ?>
+                            <button type="submit" class="btn-nuevo" style="width: 100%; margin-top: 15px; background-color: var(--azul-primario);">Confirmar Reserva</button>
+                        <?php else: ?>
+                            <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">Solo personal docente puede reservar.</p>
+                        <?php endif; ?>
+                    </form>
+                </div>
+                <?php
+            }
+            ?>
+
             <div class="dashboard-grid">
-                <div class="stat-card">
-                    <h3>🔬 Laboratorio de Química</h3>
-                    <form action="procesos/procesar_reserva.php" method="POST">
-                        <input type="hidden" name="accion" value="reservar">
-                        <input type="hidden" name="espacio" value="laboratorio">
-                        <div style="margin-top: 15px;">
-                            <label style="font-size: 0.8rem; color: #777;">Seleccionar Fecha y Hora:</label>
-                            <input type="text" name="fecha_reserva" class="selector-fecha" placeholder="Clic para elegir..." required>
-                        </div>
-                        <?php if ($es_profesor): ?>
-                            <button type="submit" class="btn-nuevo" style="width: 100%; margin-top: 15px; background-color: var(--azul-primario);">Confirmar Reserva</button>
-                        <?php else: ?>
-                            <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">Solo personal docente puede reservar.</p>
-                        <?php endif; ?>
-                    </form>
-                </div>
-
-                <div class="stat-card">
-                    <h3>⚽ Cancha de Fútbol 5</h3>
-                    <form action="procesos/procesar_reserva.php" method="POST">
-                        <input type="hidden" name="accion" value="reservar">
-                        <input type="hidden" name="espacio" value="cancha">
-                        <div style="margin-top: 15px;">
-                            <label style="font-size: 0.8rem; color: #777;">Seleccionar Fecha y Hora:</label>
-                            <input type="text" name="fecha_reserva" class="selector-fecha" placeholder="Clic para elegir..." required>
-                        </div>
-                        <?php if ($es_profesor): ?>
-                            <button type="submit" class="btn-nuevo" style="width: 100%; margin-top: 15px; background-color: var(--azul-primario);">Confirmar Reserva</button>
-                        <?php else: ?>
-                            <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">Solo personal docente puede reservar.</p>
-                        <?php endif; ?>
-                    </form>
-                </div>
-
-                <div class="stat-card">
-                    <h3>🏊‍♂️ Pileta de Natación</h3>
-                    <form action="procesos/procesar_reserva.php" method="POST">
-                        <input type="hidden" name="accion" value="reservar">
-                        <input type="hidden" name="espacio" value="pileta">
-                        <div style="margin-top: 15px;">
-                            <label style="font-size: 0.8rem; color: #777;">Seleccionar Fecha y Hora:</label>
-                            <input type="text" name="fecha_reserva" class="selector-fecha" placeholder="Clic para elegir..." required>
-                        </div>
-                        <?php if ($es_profesor): ?>
-                            <button type="submit" class="btn-nuevo" style="width: 100%; margin-top: 15px; background-color: var(--azul-primario);">Confirmar Reserva</button>
-                        <?php else: ?>
-                            <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">Solo personal docente puede reservar.</p>
-                        <?php endif; ?>
-                    </form>
-                </div>
-
-                <div class="stat-card">
-                    <h3>🏃 Pista de Atletismo</h3>
-                    <form action="procesos/procesar_reserva.php" method="POST">
-                        <input type="hidden" name="accion" value="reservar">
-                        <input type="hidden" name="espacio" value="pista">
-                        <div style="margin-top: 15px;">
-                            <label style="font-size: 0.8rem; color: #777;">Seleccionar Fecha y Hora:</label>
-                            <input type="text" name="fecha_reserva" class="selector-fecha" placeholder="Clic para elegir..." required>
-                        </div>
-                        <?php if ($es_profesor): ?>
-                            <button type="submit" class="btn-nuevo" style="width: 100%; margin-top: 15px; background-color: var(--azul-primario);">Confirmar Reserva</button>
-                        <?php else: ?>
-                            <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">Solo personal docente puede reservar.</p>
-                        <?php endif; ?>
-                    </form>
-                </div>
-
-                <div class="stat-card">
-                    <h3>🏋️ Gimnasio Cubierto</h3>
-                    <form action="procesos/procesar_reserva.php" method="POST">
-                        <input type="hidden" name="accion" value="reservar">
-                        <input type="hidden" name="espacio" value="gimnasio">
-                        <div style="margin-top: 15px;">
-                            <label style="font-size: 0.8rem; color: #777;">Seleccionar Fecha y Hora:</label>
-                            <input type="text" name="fecha_reserva" class="selector-fecha" placeholder="Clic para elegir..." required>
-                        </div>
-                        <?php if ($es_profesor): ?>
-                            <button type="submit" class="btn-nuevo" style="width: 100%; margin-top: 15px; background-color: var(--azul-primario);">Confirmar Reserva</button>
-                        <?php else: ?>
-                            <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">Solo personal docente puede reservar.</p>
-                        <?php endif; ?>
-                    </form>
-                </div>
+                <?php 
+                // Dibujamos las tarjetas usando la función auxiliar para mantener el código corto y limpio
+                dibujarTarjetaReserva('🔬 Laboratorio de Química', 'laboratorio', $es_profesor);
+                dibujarTarjetaReserva('⚽ Cancha de Fútbol 5', 'cancha', $es_profesor);
+                dibujarTarjetaReserva('🏊‍♂️ Pileta de Natación', 'pileta', $es_profesor);
+                dibujarTarjetaReserva('🏃 Pista de Atletismo', 'pista', $es_profesor);
+                dibujarTarjetaReserva('🏋️ Gimnasio Cubierto', 'gimnasio', $es_profesor);
+                dibujarTarjetaReserva('💻 Carro Móvil (Netbooks)', 'netbooks', $es_profesor); // Agregué un recurso móvil como ejemplo
+                ?>
 
                 <div class="stat-card" style="grid-column: 1 / -1;">
-                    <h3>📅 Próximas Reservas</h3>
+                    <h3>📅 Próximas Reservas Confirmadas</h3>
                     <?php if (empty($todas_las_reservas)): ?>
-                        <p style="color: #999;">No hay reservas programadas.</p>
+                        <p style="color: #999;">No hay reservas programadas en el sistema todavía.</p>
                     <?php else: ?>
                         <ul style="list-style: none; padding: 0;">
                             <?php 
                             $nombres_espacios = [
-                                'laboratorio' => '🔬 Laboratorio de Química',
-                                'cancha' => '⚽ Cancha de Fútbol 5',
-                                'pileta' => '🏊‍♂️ Pileta de Natación',
-                                'pista' => '🏃 Pista de Atletismo',
-                                'gimnasio' => '🏋️ Gimnasio Cubierto'
+                                'laboratorio' => '🔬 Laboratorio',
+                                'cancha' => '⚽ Cancha F5',
+                                'pileta' => '🏊‍♂️ Pileta',
+                                'pista' => '🏃 Pista',
+                                'gimnasio' => '🏋️ Gimnasio',
+                                'netbooks' => '💻 Netbooks'
                             ];
                             
-                            foreach ($todas_las_reservas as $r): 
+                            foreach (array_reverse($todas_las_reservas) as $r): 
                                 $nombre_mostrar = isset($nombres_espacios[$r['espacio']]) ? $nombres_espacios[$r['espacio']] : ucfirst($r['espacio']);
+                                
+                                // Damos vuelta la fecha para que se lea en formato local (DD-MM-YYYY)
+                                $fecha_formateada = date('d-m-Y', strtotime($r['fecha']));
                             ?>
-                                <li style="padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <strong><?php echo $nombre_mostrar; ?></strong> - 
-                                        <?php echo htmlspecialchars($r['fecha']); ?> 
-                                        <span style="color: #666; font-size: 0.85rem;">(Por: <?php echo htmlspecialchars($r['profesor']); ?>)</span>
+                                <li style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fafafa; border-radius: 6px; margin-bottom: 10px;">
+                                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                                        <strong style="color: var(--azul-primario); font-size: 1.1rem;"><?php echo $nombre_mostrar; ?></strong>
+                                        <span>📅 <?php echo $fecha_formateada; ?> | ⏱️ <?php echo htmlspecialchars($r['modulo'] ?? ''); ?></span>
+                                        <span style="color: #666; font-size: 0.85rem; font-weight: bold;">Reservado por: <?php echo htmlspecialchars($r['profesor']); ?></span>
                                     </div>
                                     
-                                    <?php if ($es_profesor): ?>
-                                    <form action="procesos/procesar_reserva.php" method="POST" style="margin: 0;">
+                                    <?php 
+                                    // Solo el profe que la creó (o un admin futuro) puede borrarla
+                                    if ($es_profesor && $r['profesor'] === $nombre_completo_actual): 
+                                    ?>
+                                    <form action="procesos/procesar_reserva.php" method="POST" style="margin: 0;" onsubmit="return confirm('¿Seguro querés liberar este espacio?');">
                                         <input type="hidden" name="accion" value="eliminar">
-                                        <input type="hidden" name="espacio" value="<?php echo htmlspecialchars($r['espacio']); ?>">
-                                        <input type="hidden" name="fecha_reserva" value="<?php echo htmlspecialchars($r['fecha']); ?>">
-                                        <button type="submit" class="btn-accion" style="color: var(--naranja); border-color: var(--naranja); padding: 5px 10px; font-size: 0.8rem;">❌ Eliminar</button>
+                                        <input type="hidden" name="id_reserva" value="<?php echo htmlspecialchars($r['id'] ?? ''); ?>">
+                                        <button type="submit" class="btn-accion" style="color: var(--naranja); border-color: var(--naranja); padding: 8px 15px; font-weight: bold;">❌ Cancelar Reserva</button>
                                     </form>
                                     <?php endif; ?>
                                 </li>
@@ -2257,6 +2433,110 @@ $oferta_cursos = [
             </form>
         </div>
     </div>
+
+    <div class="modal-overlay" id="modal-crear-actividad">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Crear Nueva Actividad</h2>
+                <button type="button" class="btn-cerrar-modal" onclick="document.getElementById('modal-crear-actividad').classList.remove('modal-activo');">×</button>
+            </div>
+            <form action="procesos/procesar_actividad.php" method="POST" enctype="multipart/form-data" class="form-dashboard">
+                <input type="hidden" name="accion" value="crear">
+                <div class="form-grid">
+                    <div class="input-group" style="grid-column: 1 / -1;">
+                        <label>Seleccionar Curso y Materia destino</label>
+                        <select name="curso_destino" required style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                            <option value="" disabled selected>Elegí de tus materias asignadas...</option>
+                            <?php foreach ($mis_cursos as $c): 
+                                $etiqueta = str_replace(['_anio', '_grado'], ['° Año', '° Grado'], $c['curso']) . ' "' . $c['division'] . '" - ' . $c['materia'];
+                                $valor = $c['curso'] . '|' . $c['division'] . '|' . $c['materia'];
+                            ?>
+                                <option value="<?php echo htmlspecialchars($valor); ?>"><?php echo htmlspecialchars($etiqueta); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="input-group" style="grid-column: 1 / -1;">
+                        <label>Título de la Tarea</label>
+                        <input type="text" name="titulo" required>
+                    </div>
+                    <div class="input-group" style="grid-column: 1 / -1;">
+                        <label>Instrucciones</label>
+                        <textarea name="descripcion" rows="3" required style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Fecha y Hora Límite</label>
+                        <input type="text" name="fecha_limite" class="selector-fecha" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Archivo Adjunto (Opcional)</label>
+                        <input type="file" name="archivo_adjunto" style="padding: 8px;">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn-guardar" style="background-color: var(--rosa);">Publicar Tarea</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-entrega-alumno">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Entregar Actividad</h2>
+                <button type="button" class="btn-cerrar-modal" onclick="document.getElementById('modal-entrega-alumno').classList.remove('modal-activo');">×</button>
+            </div>
+            <form action="procesos/procesar_entrega.php" method="POST" enctype="multipart/form-data" class="form-dashboard">
+                <input type="hidden" name="id_actividad" id="input-entrega-id">
+                <div class="form-grid">
+                    <div class="input-group" style="grid-column: 1 / -1;">
+                        <label>Respuesta escrita (Opcional)</label>
+                        <textarea name="texto_respuesta" rows="3" placeholder="Profe, le dejo mi trabajo acá..." style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;"></textarea>
+                    </div>
+                    <div class="input-group" style="grid-column: 1 / -1;">
+                        <label>Subir Archivo de Trabajo</label>
+                        <input type="file" name="archivo_entrega" style="padding: 8px;">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn-guardar" style="background-color: var(--verde);">Enviar Trabajo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-corregir-profe">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Evaluar Entrega</h2>
+                <button type="button" class="btn-cerrar-modal" onclick="document.getElementById('modal-corregir-profe').classList.remove('modal-activo');">×</button>
+            </div>
+            <form action="procesos/procesar_devolucion.php" method="POST" class="form-dashboard">
+                <input type="hidden" name="id_actividad" id="input-correccion-id">
+                <input type="hidden" name="alumno" id="input-correccion-alumno">
+                <input type="hidden" name="materia" id="input-correccion-materia">
+                
+                <div class="form-grid">
+                    <div class="input-group" style="grid-column: 1 / -1;">
+                        <label>Comentario / Devolución</label>
+                        <textarea name="comentario" rows="3" required style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Nota Numérica (Opcional)</label>
+                        <input type="number" step="0.1" name="nota" placeholder="Ej: 8.5">
+                    </div>
+                    <div class="input-group" style="justify-content: center; padding-top: 15px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--rosa);">
+                            <input type="checkbox" name="guardar_boletin" value="si" style="width: 20px; height: 20px; margin: 0;">
+                            <strong>Cargar nota al boletín oficial</strong>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn-guardar" style="background-color: var(--rosa);">Enviar Devolución</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <div class="modal-overlay" id="modal-notas">
         <div class="modal-box">
             <div class="modal-header">
@@ -2912,6 +3192,28 @@ $oferta_cursos = [
                 if (e.target === modalEditarUsuario) cerrarModalEditar();
             });
         }
+
+        // --- MOTOR DE MODALES DE ACTIVIDADES ---
+        const btnCrearAct = document.querySelector('.btn-abrir-crear-actividad');
+        if (btnCrearAct) {
+            btnCrearAct.addEventListener('click', () => document.getElementById('modal-crear-actividad').classList.add('modal-activo'));
+        }
+
+        document.querySelectorAll('.btn-abrir-entrega').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('input-entrega-id').value = btn.getAttribute('data-id');
+                document.getElementById('modal-entrega-alumno').classList.add('modal-activo');
+            });
+        });
+
+        document.querySelectorAll('.btn-corregir').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('input-correccion-id').value = btn.getAttribute('data-id');
+                document.getElementById('input-correccion-alumno').value = btn.getAttribute('data-alumno');
+                document.getElementById('input-correccion-materia').value = btn.getAttribute('data-materia');
+                document.getElementById('modal-corregir-profe').classList.add('modal-activo');
+            });
+        });
     </script>
 </body>
 </html>

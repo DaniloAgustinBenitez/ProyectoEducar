@@ -4,909 +4,446 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inscripción de Alumnos | Educar para Transformar</title>
+    <link rel="stylesheet" href="inscripcion.css">
+    <script src="inscripcion.js" defer></script>
 
-    <style>
-        :root {
-            --azul-primario: #1b499b;
-            --celeste:       #4cb2e4;
-            --verde:         #8cc63f;
-            --naranja:       #f15a24;
-            --fondo-claro:   #f8f9fa;
-            --texto-oscuro:  #333333;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            scroll-behavior: smooth;
-        }
-
-        body {
-            background-color: var(--fondo-claro);
-            color: var(--texto-oscuro);
-            line-height: 1.6;
-        }
-
-        /* HEADER */
-        header {
-            background-color: #ffffff;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 5%;
-        }
-
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            text-decoration: none;
-        }
-
-        .logo-placeholder {
-            height: 60px;
-            width: 60px;
-            background: linear-gradient(135deg, var(--azul-primario), var(--celeste));
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            flex-shrink: 0;
-        }
-
-        .logo-container h1 {
-            color: var(--azul-primario);
-            font-size: 1.5rem;
-            text-transform: uppercase;
-        }
-
-        .btn-volver {
-            background-color: var(--fondo-claro);
-            color: var(--azul-primario);
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 0.88rem;
-            padding: 9px 20px;
-            border-radius: 50px;
-            border: 2px solid #d0daea;
-            transition: all 0.25s;
-        }
-
-        .btn-volver:hover {
-            background-color: var(--azul-primario);
-            color: white;
-            border-color: var(--azul-primario);
-        }
-
-        /* HERO */
-        .page-hero {
-            margin-top: 80px;
-            background: linear-gradient(135deg, var(--azul-primario) 0%, #1e5ab5 55%, var(--celeste) 100%);
-            padding: 55px 5%;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .page-hero::before {
-            content: '';
-            position: absolute;
-            top: -70px; right: -70px;
-            width: 280px; height: 280px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.06);
-            pointer-events: none;
-        }
-
-        .page-hero::after {
-            content: '';
-            position: absolute;
-            bottom: -60px; left: -40px;
-            width: 220px; height: 220px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.05);
-            pointer-events: none;
-        }
-
-        .hero-badge {
-            display: inline-block;
-            background: rgba(255,255,255,0.15);
-            border: 1px solid rgba(255,255,255,0.35);
-            color: white;
-            font-size: 0.75rem;
-            font-weight: 700;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            padding: 6px 18px;
-            border-radius: 50px;
-            margin-bottom: 16px;
-        }
-
-        .page-hero h2 {
-            color: white;
-            font-size: 2.4rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .page-hero h2 span {
-            display: inline-block;
-            border-bottom: 3px solid var(--celeste);
-            padding-bottom: 8px;
-        }
-
-        .page-hero p {
-            color: rgba(255,255,255,0.85);
-            font-size: 1.05rem;
-            max-width: 580px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* CONTENEDOR */
-        .main-content {
-            max-width: 840px;
-            margin: 40px auto 60px;
-            padding: 0 5%;
-        }
-
-        /* TARJETA */
-        .form-card {
-            background: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 6px 30px rgba(27, 73, 155, 0.10);
-            padding: 40px 44px;
-            animation: fadeUp 0.4s ease;
-        }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(14px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .form-header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 30px;
-            padding-bottom: 22px;
-            border-bottom: 3px solid var(--celeste);
-        }
-
-        .form-header-icon {
-            width: 56px; height: 56px;
-            background: linear-gradient(135deg, #ddeeff, #b8d5f7);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            flex-shrink: 0;
-        }
-
-        .form-header-text h3 {
-            color: var(--azul-primario);
-            font-size: 1.4rem;
-            font-weight: 800;
-            text-transform: uppercase;
-        }
-
-        .form-header-text p { color: #888; font-size: 0.88rem; margin-top: 3px; }
-
-        /* TÍTULOS DE SECCIÓN */
-        .seccion-titulo {
-            font-size: 0.72rem;
-            font-weight: 800;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: var(--celeste);
-            margin: 30px 0 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .seccion-titulo::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: #dde6f5;
-        }
-
-        /* GRILLAS */
-        .campo-grupo          { display: grid; grid-template-columns: 1fr 1fr;     gap: 18px; }
-        .campo-grupo.triple   { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
-        .campo-grupo.completo { display: grid; grid-template-columns: 1fr;         gap: 0;    }
-
-        /* CAMPO */
-        .campo { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
-
-        .campo label {
-            font-size: 0.82rem;
-            font-weight: 700;
-            color: #555;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .campo label .req { color: var(--naranja); margin-left: 2px; }
-
-        .campo input,
-        .campo select,
-        .campo textarea {
-            padding: 11px 14px;
-            border: 2px solid #dde6f5;
-            border-radius: 9px;
-            font-size: 0.93rem;
-            color: var(--texto-oscuro);
-            background: #f8fafd;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            outline: none;
-        }
-
-        .campo input:focus,
-        .campo select:focus,
-        .campo textarea:focus {
-            border-color: var(--celeste);
-            box-shadow: 0 0 0 3px rgba(76, 178, 228, 0.18);
-            background: #fff;
-        }
-
-        .campo textarea { resize: vertical; min-height: 85px; }
-
-        .campo select {
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234cb2e4' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 14px center;
-            padding-right: 38px;
-        }
-
-        /* SEPARADOR */
-        .separador { height: 2px; background: #edf1f9; margin: 10px 0 6px; border-radius: 2px; }
-
-        /* TARJETA DE TUTOR */
-        .tutor-card {
-            background: #f0f5ff;
-            border: 2px solid #dde6f5;
-            border-radius: 12px;
-            padding: 22px 26px;
-            margin-bottom: 16px;
-        }
-
-        .tutor-card-titulo {
-            font-size: 0.8rem;
-            font-weight: 800;
-            color: var(--azul-primario);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 16px;
-        }
-
-        /* CHECKBOXES */
-        .checkbox-grupo { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 16px; }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            background: var(--fondo-claro);
-            border: 2px solid #dde6f5;
-            border-radius: 8px;
-            padding: 8px 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.87rem;
-            font-weight: 600;
-            color: #555;
-        }
-
-        .checkbox-item:has(input:checked) {
-            border-color: var(--celeste);
-            background: #e5f3fd;
-            color: var(--azul-primario);
-        }
-
-        .checkbox-item input { accent-color: var(--azul-primario); width: 15px; height: 15px; cursor: pointer; }
-
-        /* AVISOS */
-        .aviso {
-            background: #e8f4fd;
-            border-left: 4px solid var(--celeste);
-            border-radius: 0 10px 10px 0;
-            padding: 14px 18px;
-            font-size: 0.87rem;
-            color: #2d6a8a;
-            margin: 8px 0 20px;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            line-height: 1.5;
-        }
-
-        .aviso-verde { background: #edf7e0; border-left-color: var(--verde); color: #3a6a10; }
-        .aviso-naranja { background: #fff1eb; border-left-color: var(--naranja); color: #8a3d10; }
-        .aviso .icono { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
-
-        /* TÉRMINOS */
-        .terminos {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 26px;
-            padding: 16px 18px;
-            background: var(--fondo-claro);
-            border-radius: 10px;
-            border: 2px solid #dde6f5;
-        }
-
-        .terminos input[type="checkbox"] {
-            width: 18px; height: 18px;
-            accent-color: var(--azul-primario);
-            cursor: pointer;
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-
-        .terminos label { font-size: 0.87rem; color: #666; cursor: pointer; line-height: 1.55; }
-
-        /* BOTÓN — verde como el proyecto */
-        .btn-enviar {
-            width: 100%;
-            padding: 16px;
-            border: none;
-            border-radius: 10px;
-            background-color: var(--verde);
-            color: white;
-            font-size: 1rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
-            box-shadow: 0 6px 18px rgba(140, 198, 63, 0.35);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .btn-enviar:hover {
-            background-color: #7ab530;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 26px rgba(140, 198, 63, 0.45);
-        }
-
-        /* MODAL */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(10, 22, 55, 0.6);
-            z-index: 999;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-overlay.activo { display: flex; animation: fadeIn 0.3s ease; }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .modal-box {
-            background: white;
-            border-radius: 20px;
-            padding: 48px 40px;
-            max-width: 420px;
-            width: 90%;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-            animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes popUp {
-            from { transform: scale(0.85); opacity: 0; }
-            to   { transform: scale(1);    opacity: 1; }
-        }
-
-        .modal-box .icono-grande { font-size: 62px; display: block; margin-bottom: 14px; }
-
-        .modal-box h3 { color: var(--azul-primario); font-size: 1.5rem; font-weight: 800; margin-bottom: 10px; }
-        .modal-box p  { color: #777; font-size: 0.95rem; line-height: 1.6; margin-bottom: 26px; }
-
-        .btn-cerrar-modal {
-            background-color: var(--azul-primario);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            padding: 13px 38px;
-            font-weight: 700;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: background-color 0.25s, transform 0.2s;
-        }
-
-        .btn-cerrar-modal:hover { background-color: #163d85; transform: translateY(-2px); }
-
-        /* FOOTER */
-        footer {
-            background-color: var(--azul-primario);
-            color: rgba(255,255,255,0.7);
-            text-align: center;
-            padding: 22px;
-            font-size: 0.85rem;
-        }
-
-        footer strong { color: white; }
-
-        /* RESPONSIVE */
-        @media (max-width: 650px) {
-            .campo-grupo,
-            .campo-grupo.triple { grid-template-columns: 1fr; }
-            .form-card          { padding: 26px 18px; }
-            .page-hero h2       { font-size: 1.65rem; }
-            .logo-container h1  { font-size: 1.1rem; }
-        }
-    </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<header>
-    <a href="index.html" class="logo-container">
-        <div class="logo-placeholder">🎓</div>
-        <h1>Educar para Transformar</h1>
-    </a>
-    <a href="index.html" class="btn-volver">← Volver al inicio</a>
-</header>
+    <!-- BANDA DE PALETA -->
+    <div class="palette-stripe" aria-hidden="true">
+        <span class="s1"></span><span class="s2"></span><span class="s3"></span>
+        <span class="s4"></span><span class="s5"></span><span class="s6"></span>
+    </div>
 
-<!-- HERO -->
-<section class="page-hero">
-    <div class="hero-badge">📋 Inscripciones 2025</div>
-    <h2><span>Solicitud de Inscripción</span></h2>
-    <p>Completá el formulario con los datos del alumno y los contactos de los padres o tutores. Nos pondremos en contacto para confirmar la solicitud.</p>
-</section>
-
-<!-- FORMULARIO -->
-<main class="main-content">
-    <div class="form-card">
-
-        <div class="form-header">
-            <div class="form-header-icon">🎒</div>
-            <div class="form-header-text">
-                <h3>Inscripción de Alumno</h3>
-                <p>Los campos con <span style="color:var(--naranja); font-weight:700;">*</span> son obligatorios.</p>
-            </div>
+    <!-- HEADER -->
+    <header>
+        <div class="logo-container">
+            <img src="img/logo.png" alt="Logo Educar para Transformar">
+            <h1>Educar para Transformar</h1>
         </div>
+        <a href="index.html" class="btn-volver">← Volver al inicio</a>
+    </header>
 
-        <form id="form-inscripcion" onsubmit="enviarFormulario(event)">
+    <!-- HERO -->
+    <section class="page-hero">
+        <div class="hero-badge">📋 Inscripciones 2025</div>
+        <h2><span>Solicitud de Inscripción</span></h2>
+        <p>Completá el formulario con los datos del alumno y los contactos de los padres o tutores. Nos pondremos en contacto para confirmar la solicitud.</p>
+    </section>
 
-            <!-- SECCIÓN 1: DATOS DEL ALUMNO -->
-            <p class="seccion-titulo">📋 Datos Personales del Alumno</p>
+    <!-- FORMULARIO -->
+    <main class="main-content">
+        <div class="form-card">
 
-            <div class="campo-grupo">
-                <div class="campo">
-                    <label>Nombre <span class="req">*</span></label>
-                    <input type="text" placeholder="Ej: Juan" required>
-                </div>
-                <div class="campo">
-                    <label>Apellido <span class="req">*</span></label>
-                    <input type="text" placeholder="Ej: González" required>
+            <div class="form-header">
+                <div class="form-header-icon">🎒</div>
+                <div class="form-header-text">
+                    <h3>Inscripción de Alumno</h3>
+                    <p>Los campos con <span style="color:var(--naranja); font-weight:700;">*</span> son obligatorios.</p>
                 </div>
             </div>
 
-            <div class="campo-grupo triple">
-                <div class="campo">
-                    <label>Fecha de Nacimiento <span class="req">*</span></label>
-                    <input type="date" required>
-                </div>
-                <div class="campo">
-                    <label>DNI <span class="req">*</span></label>
-                    <input type="text" placeholder="Sin puntos" maxlength="8" required>
-                </div>
-                <div class="campo">
-                    <label>Género</label>
-                    <select>
-                        <option value="">Seleccioná...</option>
-                        <option>Masculino</option>
-                        <option>Femenino</option>
-                        <option>No binario</option>
-                        <option>Prefiero no decirlo</option>
-                    </select>
-                </div>
-            </div>
+            <form id="form-inscripcion" onsubmit="enviarFormulario(event)">
 
-            <div class="campo-grupo">
-                <div class="campo">
-                    <label>Nacionalidad</label>
-                    <input type="text" placeholder="Ej: Argentina">
-                </div>
-                <div class="campo">
-                    <label>Lugar de Nacimiento</label>
-                    <input type="text" placeholder="Ciudad, Provincia">
-                </div>
-            </div>
-
-            <!-- SECCIÓN 2: DOMICILIO -->
-            <div class="separador"></div>
-            <p class="seccion-titulo">🏠 Domicilio y Contacto del Alumno</p>
-
-            <div class="campo-grupo completo">
-                <div class="campo">
-                    <label>Domicilio <span class="req">*</span></label>
-                    <input type="text" placeholder="Calle, número, barrio" required>
-                </div>
-            </div>
-
-            <div class="campo-grupo triple">
-                <div class="campo">
-                    <label>Ciudad <span class="req">*</span></label>
-                    <input type="text" placeholder="Resistencia" required>
-                </div>
-                <div class="campo">
-                    <label>Provincia</label>
-                    <input type="text" placeholder="Chaco">
-                </div>
-                <div class="campo">
-                    <label>Código Postal</label>
-                    <input type="text" placeholder="3500">
-                </div>
-            </div>
-
-            <div class="campo-grupo">
-                <div class="campo">
-                    <label>Celular del Alumno</label>
-                    <input type="tel" placeholder="+54 362 XXXXXXX">
-                </div>
-                <div class="campo">
-                    <label>Correo Electrónico del Alumno</label>
-                    <input type="email" placeholder="alumno@correo.com">
-                </div>
-            </div>
-
-            <!-- SECCIÓN 3: ACADÉMICO -->
-            <div class="separador"></div>
-            <p class="seccion-titulo">📚 Datos Académicos</p>
-
-            <div class="campo-grupo">
-                <div class="campo">
-                    <label>Nivel al que desea inscribirse <span class="req">*</span></label>
-                    <select required>
-                        <option value="">Seleccioná el nivel...</option>
-                        <option>Nivel Inicial</option>
-                        <option>Nivel Primario</option>
-                        <option>Nivel Secundario</option>
-                    </select>
-                </div>
-                <div class="campo">
-                    <label>Grado / Año <span class="req">*</span></label>
-                    <select required>
-                        <option value="">Seleccioná...</option>
-                        <option>Sala de 3</option>
-                        <option>Sala de 4</option>
-                        <option>Sala de 5</option>
-                        <option>1° Grado / 1° Año</option>
-                        <option>2° Grado / 2° Año</option>
-                        <option>3° Grado / 3° Año</option>
-                        <option>4° Grado / 4° Año</option>
-                        <option>5° Grado / 5° Año</option>
-                        <option>6° Grado / 6° Año</option>
-                        <option>7° Grado</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="campo-grupo">
-                <div class="campo">
-                    <label>Establecimiento educativo anterior</label>
-                    <input type="text" placeholder="Nombre del colegio anterior">
-                </div>
-                <div class="campo">
-                    <label>¿Repitió algún año?</label>
-                    <select>
-                        <option value="">Seleccioná...</option>
-                        <option>No</option>
-                        <option>Sí, una vez</option>
-                        <option>Sí, más de una vez</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- SECCIÓN 4: TUTOR PRINCIPAL -->
-            <div class="separador"></div>
-            <p class="seccion-titulo">👨‍👩‍👧 Tutor / Contacto Principal</p>
-
-            <div class="aviso">
-                <span class="icono">ℹ️</span>
-                Este es el contacto principal ante cualquier comunicación, citación o urgencia institucional.
-            </div>
-
-            <div class="tutor-card">
-                <p class="tutor-card-titulo">👤 Datos del Tutor Principal</p>
+                <!-- SECCIÓN 1: DATOS DEL ALUMNO -->
+                <p class="seccion-titulo">📋 Datos Personales del Alumno</p>
 
                 <div class="campo-grupo">
                     <div class="campo">
                         <label>Nombre <span class="req">*</span></label>
-                        <input type="text" placeholder="Nombre" required>
+                        <input type="text" placeholder="Ej: Juan" required>
                     </div>
                     <div class="campo">
                         <label>Apellido <span class="req">*</span></label>
-                        <input type="text" placeholder="Apellido" required>
+                        <input type="text" placeholder="Ej: González" required>
                     </div>
                 </div>
 
                 <div class="campo-grupo triple">
                     <div class="campo">
+                        <label>Fecha de Nacimiento <span class="req">*</span></label>
+                        <input type="date" required>
+                    </div>
+                    <div class="campo">
                         <label>DNI <span class="req">*</span></label>
                         <input type="text" placeholder="Sin puntos" maxlength="8" required>
+                    </div>
+                    <div class="campo">
+                        <label>Género</label>
+                        <select>
+                            <option value="">Seleccioná...</option>
+                            <option>Masculino</option>
+                            <option>Femenino</option>
+                            <option>No binario</option>
+                            <option>Prefiero no decirlo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="campo-grupo">
+                    <div class="campo">
+                        <label>Nacionalidad</label>
+                        <input type="text" placeholder="Ej: Argentina">
+                    </div>
+                    <div class="campo">
+                        <label>Lugar de Nacimiento</label>
+                        <input type="text" placeholder="Ciudad, Provincia">
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: DOMICILIO -->
+                <div class="separador"></div>
+                <p class="seccion-titulo">🏠 Domicilio y Contacto del Alumno</p>
+
+                <div class="campo-grupo completo">
+                    <div class="campo">
+                        <label>Domicilio <span class="req">*</span></label>
+                        <input type="text" placeholder="Calle, número, barrio" required>
+                    </div>
+                </div>
+
+                <div class="campo-grupo triple">
+                    <div class="campo">
+                        <label>Ciudad <span class="req">*</span></label>
+                        <input type="text" placeholder="Resistencia" required>
+                    </div>
+                    <div class="campo">
+                        <label>Provincia</label>
+                        <input type="text" placeholder="Chaco">
+                    </div>
+                    <div class="campo">
+                        <label>Código Postal</label>
+                        <input type="text" placeholder="3500">
+                    </div>
+                </div>
+
+                <div class="campo-grupo">
+                    <div class="campo">
+                        <label>Celular del Alumno</label>
+                        <input type="tel" placeholder="+54 362 XXXXXXX">
+                    </div>
+                    <div class="campo">
+                        <label>Correo Electrónico del Alumno</label>
+                        <input type="email" placeholder="alumno@correo.com">
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 3: ACADÉMICO -->
+                <div class="separador"></div>
+                <p class="seccion-titulo">📚 Datos Académicos</p>
+
+                <div class="campo-grupo">
+                    <div class="campo">
+                        <label>Nivel al que desea inscribirse <span class="req">*</span></label>
+                        <select required>
+                            <option value="">Seleccioná el nivel...</option>
+                            <option>Nivel Inicial</option>
+                            <option>Nivel Primario</option>
+                            <option>Nivel Secundario</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label>Grado / Año <span class="req">*</span></label>
+                        <select required>
+                            <option value="">Seleccioná...</option>
+                            <option>Sala de 3</option>
+                            <option>Sala de 4</option>
+                            <option>Sala de 5</option>
+                            <option>1° Grado / 1° Año</option>
+                            <option>2° Grado / 2° Año</option>
+                            <option>3° Grado / 3° Año</option>
+                            <option>4° Grado / 4° Año</option>
+                            <option>5° Grado / 5° Año</option>
+                            <option>6° Grado / 6° Año</option>
+                            <option>7° Grado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="campo-grupo">
+                    <div class="campo">
+                        <label>Establecimiento educativo anterior</label>
+                        <input type="text" placeholder="Nombre del colegio anterior">
+                    </div>
+                    <div class="campo">
+                        <label>¿Repitió algún año?</label>
+                        <select>
+                            <option value="">Seleccioná...</option>
+                            <option>No</option>
+                            <option>Sí, una vez</option>
+                            <option>Sí, más de una vez</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 4: TUTOR PRINCIPAL -->
+                <div class="separador"></div>
+                <p class="seccion-titulo">👨‍👩‍👧 Tutor / Contacto Principal</p>
+
+                <div class="aviso">
+                    <span class="icono">ℹ️</span>
+                    Este es el contacto principal ante cualquier comunicación, citación o urgencia institucional.
+                </div>
+
+                <div class="tutor-card">
+                    <p class="tutor-card-titulo">👤 Datos del Tutor Principal</p>
+
+                    <div class="campo-grupo">
+                        <div class="campo">
+                            <label>Nombre <span class="req">*</span></label>
+                            <input type="text" placeholder="Nombre" required>
+                        </div>
+                        <div class="campo">
+                            <label>Apellido <span class="req">*</span></label>
+                            <input type="text" placeholder="Apellido" required>
+                        </div>
+                    </div>
+
+                    <div class="campo-grupo triple">
+                        <div class="campo">
+                            <label>DNI <span class="req">*</span></label>
+                            <input type="text" placeholder="Sin puntos" maxlength="8" required>
+                        </div>
+                        <div class="campo">
+                            <label>Relación con el alumno <span class="req">*</span></label>
+                            <select required>
+                                <option value="">Seleccioná...</option>
+                                <option>Padre</option>
+                                <option>Madre</option>
+                                <option>Tutor Legal</option>
+                                <option>Abuelo/a</option>
+                                <option>Tío/a</option>
+                                <option>Hermano/a mayor</option>
+                                <option>Otro</option>
+                            </select>
+                        </div>
+                        <div class="campo">
+                            <label>Estado Civil</label>
+                            <select>
+                                <option value="">Seleccioná...</option>
+                                <option>Soltero/a</option>
+                                <option>Casado/a</option>
+                                <option>Divorciado/a</option>
+                                <option>Viudo/a</option>
+                                <option>Unión de hecho</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="campo-grupo">
+                        <div class="campo">
+                            <label>Teléfono Fijo</label>
+                            <input type="tel" placeholder="0362 - XXXXXXX">
+                        </div>
+                        <div class="campo">
+                            <label>Teléfono Celular <span class="req">*</span></label>
+                            <input type="tel" placeholder="+54 362 XXXXXXX" required>
+                        </div>
+                    </div>
+
+                    <div class="campo-grupo">
+                        <div class="campo">
+                            <label>Correo Electrónico <span class="req">*</span></label>
+                            <input type="email" placeholder="tutor@correo.com" required>
+                        </div>
+                        <div class="campo">
+                            <label>WhatsApp (si es diferente al celular)</label>
+                            <input type="tel" placeholder="+54 362 XXXXXXX">
+                        </div>
+                    </div>
+
+                    <div class="campo-grupo">
+                        <div class="campo">
+                            <label>Ocupación / Trabajo</label>
+                            <input type="text" placeholder="Ej: Docente, Comerciante...">
+                        </div>
+                        <div class="campo">
+                            <label>Teléfono del Trabajo</label>
+                            <input type="tel" placeholder="0362 - XXXXXXX">
+                        </div>
+                    </div>
+
+                    <div class="campo-grupo completo">
+                        <div class="campo">
+                            <label>Domicilio (si es diferente al del alumno)</label>
+                            <input type="text" placeholder="Calle, número, barrio">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 5: TUTOR SECUNDARIO -->
+                <div class="separador"></div>
+                <p class="seccion-titulo">👨‍👩‍👧 Tutor / Contacto Secundario</p>
+
+                <div class="aviso aviso-verde">
+                    <span class="icono">📌</span>
+                    Se utiliza si no se puede comunicar con el tutor principal. No es obligatorio pero sí recomendado.
+                </div>
+
+                <div class="tutor-card">
+                    <p class="tutor-card-titulo">👤 Datos del Tutor Secundario</p>
+
+                    <div class="campo-grupo">
+                        <div class="campo">
+                            <label>Nombre</label>
+                            <input type="text" placeholder="Nombre">
+                        </div>
+                        <div class="campo">
+                            <label>Apellido</label>
+                            <input type="text" placeholder="Apellido">
+                        </div>
+                    </div>
+
+                    <div class="campo-grupo">
+                        <div class="campo">
+                            <label>DNI</label>
+                            <input type="text" placeholder="Sin puntos" maxlength="8">
+                        </div>
+                        <div class="campo">
+                            <label>Relación con el alumno</label>
+                            <select>
+                                <option value="">Seleccioná...</option>
+                                <option>Padre</option>
+                                <option>Madre</option>
+                                <option>Tutor Legal</option>
+                                <option>Abuelo/a</option>
+                                <option>Tío/a</option>
+                                <option>Hermano/a mayor</option>
+                                <option>Otro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="campo-grupo">
+                        <div class="campo">
+                            <label>Teléfono Celular</label>
+                            <input type="tel" placeholder="+54 362 XXXXXXX">
+                        </div>
+                        <div class="campo">
+                            <label>Correo Electrónico</label>
+                            <input type="email" placeholder="contacto@correo.com">
+                        </div>
+                    </div>
+
+                    <div class="campo-grupo">
+                        <div class="campo">
+                            <label>WhatsApp</label>
+                            <input type="tel" placeholder="+54 362 XXXXXXX">
+                        </div>
+                        <div class="campo">
+                            <label>Ocupación / Trabajo</label>
+                            <input type="text" placeholder="Ej: Enfermero/a, Empleado/a...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 6: EMERGENCIA -->
+                <div class="separador"></div>
+                <p class="seccion-titulo">🚨 Contacto de Emergencia</p>
+
+                <div class="aviso aviso-naranja">
+                    <span class="icono">⚠️</span>
+                    Este contacto se usa únicamente cuando no se puede localizar a los tutores anteriores.
+                </div>
+
+                <div class="campo-grupo">
+                    <div class="campo">
+                        <label>Nombre y Apellido <span class="req">*</span></label>
+                        <input type="text" placeholder="Nombre completo" required>
                     </div>
                     <div class="campo">
                         <label>Relación con el alumno <span class="req">*</span></label>
                         <select required>
                             <option value="">Seleccioná...</option>
-                            <option>Padre</option>
-                            <option>Madre</option>
-                            <option>Tutor Legal</option>
-                            <option>Abuelo/a</option>
-                            <option>Tío/a</option>
-                            <option>Hermano/a mayor</option>
+                            <option>Familiar</option>
+                            <option>Vecino/a</option>
+                            <option>Amigo/a de la familia</option>
+                            <option>Otro tutor</option>
                             <option>Otro</option>
                         </select>
                     </div>
-                    <div class="campo">
-                        <label>Estado Civil</label>
-                        <select>
-                            <option value="">Seleccioná...</option>
-                            <option>Soltero/a</option>
-                            <option>Casado/a</option>
-                            <option>Divorciado/a</option>
-                            <option>Viudo/a</option>
-                            <option>Unión de hecho</option>
-                        </select>
-                    </div>
                 </div>
 
                 <div class="campo-grupo">
                     <div class="campo">
-                        <label>Teléfono Fijo</label>
-                        <input type="tel" placeholder="0362 - XXXXXXX">
-                    </div>
-                    <div class="campo">
-                        <label>Teléfono Celular <span class="req">*</span></label>
+                        <label>Celular de Emergencia <span class="req">*</span></label>
                         <input type="tel" placeholder="+54 362 XXXXXXX" required>
                     </div>
-                </div>
-
-                <div class="campo-grupo">
                     <div class="campo">
-                        <label>Correo Electrónico <span class="req">*</span></label>
-                        <input type="email" placeholder="tutor@correo.com" required>
-                    </div>
-                    <div class="campo">
-                        <label>WhatsApp (si es diferente al celular)</label>
+                        <label>Teléfono Alternativo</label>
                         <input type="tel" placeholder="+54 362 XXXXXXX">
                     </div>
                 </div>
 
-                <div class="campo-grupo">
+                <!-- SECCIÓN 7: INFO ADICIONAL -->
+                <div class="separador"></div>
+                <p class="seccion-titulo">📎 Información Adicional</p>
+
+                <p style="font-size:0.82rem; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">
+                    ¿El alumno presenta alguna necesidad especial o condición de salud?
+                </p>
+                <div class="checkbox-grupo">
+                    <label class="checkbox-item"><input type="checkbox"> Ninguna</label>
+                    <label class="checkbox-item"><input type="checkbox"> Discapacidad visual</label>
+                    <label class="checkbox-item"><input type="checkbox"> Discapacidad auditiva</label>
+                    <label class="checkbox-item"><input type="checkbox"> Discapacidad motriz</label>
+                    <label class="checkbox-item"><input type="checkbox"> Condición crónica de salud</label>
+                    <label class="checkbox-item"><input type="checkbox"> Necesidades educativas especiales</label>
+                    <label class="checkbox-item"><input type="checkbox"> Alergia alimentaria</label>
+                    <label class="checkbox-item"><input type="checkbox"> Medicación habitual</label>
+                </div>
+
+                <div class="campo-grupo completo">
                     <div class="campo">
-                        <label>Ocupación / Trabajo</label>
-                        <input type="text" placeholder="Ej: Docente, Comerciante...">
-                    </div>
-                    <div class="campo">
-                        <label>Teléfono del Trabajo</label>
-                        <input type="tel" placeholder="0362 - XXXXXXX">
+                        <label>Obra Social / Cobertura Médica</label>
+                        <input type="text" placeholder="Ej: IOSCOR, PAMI, Particular...">
                     </div>
                 </div>
 
                 <div class="campo-grupo completo">
                     <div class="campo">
-                        <label>Domicilio (si es diferente al del alumno)</label>
-                        <input type="text" placeholder="Calle, número, barrio">
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECCIÓN 5: TUTOR SECUNDARIO -->
-            <div class="separador"></div>
-            <p class="seccion-titulo">👨‍👩‍👧 Tutor / Contacto Secundario</p>
-
-            <div class="aviso aviso-verde">
-                <span class="icono">📌</span>
-                Se utiliza si no se puede comunicar con el tutor principal. No es obligatorio pero sí recomendado.
-            </div>
-
-            <div class="tutor-card">
-                <p class="tutor-card-titulo">👤 Datos del Tutor Secundario</p>
-
-                <div class="campo-grupo">
-                    <div class="campo">
-                        <label>Nombre</label>
-                        <input type="text" placeholder="Nombre">
-                    </div>
-                    <div class="campo">
-                        <label>Apellido</label>
-                        <input type="text" placeholder="Apellido">
+                        <label>Observaciones adicionales</label>
+                        <textarea placeholder="Cualquier información relevante..."></textarea>
                     </div>
                 </div>
 
-                <div class="campo-grupo">
-                    <div class="campo">
-                        <label>DNI</label>
-                        <input type="text" placeholder="Sin puntos" maxlength="8">
-                    </div>
-                    <div class="campo">
-                        <label>Relación con el alumno</label>
-                        <select>
-                            <option value="">Seleccioná...</option>
-                            <option>Padre</option>
-                            <option>Madre</option>
-                            <option>Tutor Legal</option>
-                            <option>Abuelo/a</option>
-                            <option>Tío/a</option>
-                            <option>Hermano/a mayor</option>
-                            <option>Otro</option>
-                        </select>
-                    </div>
+                <div class="aviso">
+                    <span class="icono">📎</span>
+                    <div>Luego de enviar, deberás presentar de forma <strong>presencial o por correo:</strong> partida de nacimiento, DNI del alumno y del tutor, libreta sanitaria y constancia del establecimiento anterior.</div>
                 </div>
 
-                <div class="campo-grupo">
-                    <div class="campo">
-                        <label>Teléfono Celular</label>
-                        <input type="tel" placeholder="+54 362 XXXXXXX">
-                    </div>
-                    <div class="campo">
-                        <label>Correo Electrónico</label>
-                        <input type="email" placeholder="contacto@correo.com">
-                    </div>
+                <!-- TÉRMINOS -->
+                <div class="terminos">
+                    <input type="checkbox" id="terminos" required>
+                    <label for="terminos">
+                        Declaro que los datos ingresados son correctos y verídicos. Autorizo al establecimiento a utilizarlos con fines institucionales.
+                    </label>
                 </div>
 
-                <div class="campo-grupo">
-                    <div class="campo">
-                        <label>WhatsApp</label>
-                        <input type="tel" placeholder="+54 362 XXXXXXX">
-                    </div>
-                    <div class="campo">
-                        <label>Ocupación / Trabajo</label>
-                        <input type="text" placeholder="Ej: Enfermero/a, Empleado/a...">
-                    </div>
-                </div>
-            </div>
+                <button type="submit" class="btn-enviar">
+                    ✉️ Enviar Solicitud de Inscripción
+                </button>
 
-            <!-- SECCIÓN 6: EMERGENCIA -->
-            <div class="separador"></div>
-            <p class="seccion-titulo">🚨 Contacto de Emergencia</p>
+            </form>
+        </div>
+    </main>
 
-            <div class="aviso aviso-naranja">
-                <span class="icono">⚠️</span>
-                Este contacto se usa <strong>únicamente ante una emergencia médica o urgente</strong> cuando no se puede localizar a los tutores anteriores.
-            </div>
-
-            <div class="campo-grupo">
-                <div class="campo">
-                    <label>Nombre y Apellido <span class="req">*</span></label>
-                    <input type="text" placeholder="Nombre completo" required>
-                </div>
-                <div class="campo">
-                    <label>Relación con el alumno <span class="req">*</span></label>
-                    <select required>
-                        <option value="">Seleccioná...</option>
-                        <option>Familiar</option>
-                        <option>Vecino/a</option>
-                        <option>Amigo/a de la familia</option>
-                        <option>Otro tutor</option>
-                        <option>Otro</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="campo-grupo">
-                <div class="campo">
-                    <label>Celular de Emergencia <span class="req">*</span></label>
-                    <input type="tel" placeholder="+54 362 XXXXXXX" required>
-                </div>
-                <div class="campo">
-                    <label>Teléfono Alternativo</label>
-                    <input type="tel" placeholder="+54 362 XXXXXXX">
-                </div>
-            </div>
-
-            <!-- SECCIÓN 7: INFO ADICIONAL -->
-            <div class="separador"></div>
-            <p class="seccion-titulo">📎 Información Adicional</p>
-
-            <p style="font-size:0.82rem; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">
-                ¿El alumno presenta alguna necesidad especial o condición de salud?
-            </p>
-            <div class="checkbox-grupo">
-                <label class="checkbox-item"><input type="checkbox"> Ninguna</label>
-                <label class="checkbox-item"><input type="checkbox"> Discapacidad visual</label>
-                <label class="checkbox-item"><input type="checkbox"> Discapacidad auditiva</label>
-                <label class="checkbox-item"><input type="checkbox"> Discapacidad motriz</label>
-                <label class="checkbox-item"><input type="checkbox"> Condición crónica de salud</label>
-                <label class="checkbox-item"><input type="checkbox"> Necesidades educativas especiales</label>
-                <label class="checkbox-item"><input type="checkbox"> Alergia alimentaria</label>
-                <label class="checkbox-item"><input type="checkbox"> Medicación habitual</label>
-            </div>
-
-            <div class="campo-grupo completo">
-                <div class="campo">
-                    <label>Obra Social / Cobertura Médica</label>
-                    <input type="text" placeholder="Ej: IOSCOR, PAMI, Particular...">
-                </div>
-            </div>
-
-            <div class="campo-grupo completo">
-                <div class="campo">
-                    <label>Observaciones adicionales</label>
-                    <textarea placeholder="Cualquier información relevante para el equipo docente o directivo..."></textarea>
-                </div>
-            </div>
-
-            <div class="aviso">
-                <span class="icono">📎</span>
-                <div>Luego de enviar, deberás presentar de forma <strong>presencial o por correo</strong>: partida de nacimiento, DNI del alumno y del tutor, libreta sanitaria y constancia del establecimiento anterior.</div>
-            </div>
-
-            <!-- TÉRMINOS -->
-            <div class="terminos">
-                <input type="checkbox" id="terminos" required>
-                <label for="terminos">
-                    Declaro que los datos ingresados son correctos y verídicos. Autorizo al establecimiento a utilizarlos con fines institucionales y a contactarme por los medios indicados en este formulario.
-                </label>
-            </div>
-
-            <button type="submit" class="btn-enviar">
-                ✉️ Enviar Solicitud de Inscripción
-            </button>
-
-        </form>
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modal-exito">
+        <div class="modal-box">
+            <span class="icono-grande">🎒</span>
+            <h3>¡Solicitud enviada!</h3>
+            <p>La solicitud de inscripción fue recibida correctamente. Nos comunicaremos con los tutores a la brevedad para confirmar los próximos pasos.</p>
+            <button class="btn-cerrar-modal" onclick="cerrarModal()">Aceptar</button>
+        </div>
     </div>
-</main>
 
-<!-- MODAL -->
-<div class="modal-overlay" id="modal-exito">
-    <div class="modal-box">
-        <span class="icono-grande">🎒</span>
-        <h3>¡Solicitud enviada!</h3>
-        <p>La solicitud de inscripción fue recibida correctamente. Nos comunicaremos con los tutores a la brevedad para confirmar los próximos pasos.</p>
-        <button class="btn-cerrar-modal" onclick="cerrarModal()">Aceptar</button>
-    </div>
-</div>
+    <!-- FOOTER -->
+    <footer>
+        <strong>Educar para Transformar</strong> · Centro Educativo · Resistencia, Chaco
+    </footer>
 
-<!-- FOOTER -->
-<footer>
-    <strong>Educar para Transformar</strong> · Centro Educativo · Resistencia, Chaco
-</footer>
-
-<script>
-    function enviarFormulario(event) {
-        event.preventDefault();
-        document.getElementById('modal-exito').classList.add('activo');
-    }
-
-    function cerrarModal() {
-        document.getElementById('modal-exito').classList.remove('activo');
-        document.getElementById('form-inscripcion').reset();
-    }
-
-    document.getElementById('modal-exito').addEventListener('click', function(e) {
-        if (e.target === this) cerrarModal();
-    });
-</script>
 
 </body>
 </html>

@@ -1,1 +1,12 @@
-[]
+[
+    {
+        "id": "cap_6a2b518f95408",
+        "titulo": "RCP",
+        "fecha": "2026-06-12",
+        "hora": "07:00",
+        "lugar": "SUM",
+        "inscriptos": [
+            "Jimena Perez"
+        ]
+    }
+]

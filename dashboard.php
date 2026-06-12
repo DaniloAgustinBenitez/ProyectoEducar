@@ -292,24 +292,12 @@ if (file_exists($archivo_docs)) {
     }
 }
 
-// LÓGICA PARA CAPACITACIONES DOCENTES 
+// LÓGICA PARA CAPACITACIONES DOCENTES (NUEVA VERSIÓN DINÁMICA)
 $archivo_cap = __DIR__ . '/data/capacitaciones.json';
-$mis_capacitaciones = [];
+$todas_las_capacitaciones = [];
 if (file_exists($archivo_cap)) {
-    $todas_cap = json_decode(file_get_contents($archivo_cap), true) ?: [];
-    // Filtramos solo las que pertenecen al profesor actual
-    foreach ($todas_cap as $c) {
-        if ($c['profesor'] === $usuario_actual) {
-            $mis_capacitaciones[] = $c['curso'];
-        }
-    }
+    $todas_las_capacitaciones = json_decode(file_get_contents($archivo_cap), true) ?: [];
 }
-
-$oferta_cursos = [
-    ["nombre" => "Nuevas Metodologías en el Aula", "icono" => "📚", "horario" => "Viernes 18:00 hs"],
-    ["nombre" => "Primeros Auxilios y RCP", "icono" => "🚑", "horario" => "Sábados 09:00 hs"],
-    ["nombre" => "IA Generativa para Docentes", "icono" => "🤖", "horario" => "Jueves 19:00 hs"]
-];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -930,13 +918,15 @@ $oferta_cursos = [
         </div>
         <?php endif; ?>
 
-        <?php if ($es_profesor): ?>
+        <?php if ($es_profesor || $es_preceptor): ?>
         <div class="menu-section">
-            <span class="section-title" style="border-top: 1px solid #eee; padding-top: 15px;">Docentes</span>
-            <a href="#" class="nav-item menu-activo" data-vista="vista-gestion-aula"><i>🏫</i> <span>Gestión de Aula</span></a>
-            <a href="#" class="nav-item" data-vista="vista-reservas"><i>🧪</i> <span>Reservas</span></a>
-            <a href="#" class="nav-item" data-vista="vista-recursos-salud"><i>📂</i> <span>Recursos y Salud</span></a>
-            <a href="#" class="nav-item" data-vista="vista-actividades"><i>📝</i> <span>Actividades y Tareas</span></a>
+            <span class="section-title" style="border-top: 1px solid #eee; padding-top: 15px;">Plantel Docente</span>
+            <?php if ($es_profesor): ?>
+                <a href="#" class="nav-item menu-activo" data-vista="vista-gestion-aula"><i>🏫</i> <span>Gestión de Aula</span></a>
+                <a href="#" class="nav-item" data-vista="vista-reservas"><i>🧪</i> <span>Reservas</span></a>
+                <a href="#" class="nav-item" data-vista="vista-actividades"><i>📝</i> <span>Actividades y Tareas</span></a>
+            <?php endif; ?>
+            <a href="#" class="nav-item" data-vista="vista-recursos-salud"><i>🎓</i> <span>Capacitaciones y Perfil</span></a>
         </div>
         <?php endif; ?>
         <?php if ($es_preceptor || $es_maestro_primaria): ?>
@@ -954,6 +944,7 @@ $oferta_cursos = [
             <span class="section-title" style="border-top: 1px solid #eee; padding-top: 15px;">Administrativo</span>
             <a href="#" class="nav-item menu-activo" data-vista="vista-usuarios"><i>👥</i> <span>Gestión de Usuarios</span></a>
             <a href="#" class="nav-item" data-vista="vista-cursos"><i>📚</i> <span>Asignación de Cátedras</span></a>
+            <a href="#" class="nav-item" data-vista="vista-admin-capacitaciones"><i>🎓</i> <span>Gestión Capacitaciones</span></a>
             <a href="#" class="nav-item" data-vista="vista-comedor"><i>🥗</i> <span>Comedor</span></a>
             <a href="#" class="nav-item" data-vista="vista-transporte"><i>🚌</i> <span>Rutas de Transporte</span></a>
             <a href="#" class="nav-item" data-vista="vista-mantenimiento"><i>🛠️</i> <span>Mantenimiento</span></a>
@@ -1000,7 +991,7 @@ $oferta_cursos = [
                             <?php endforeach; ?>
                         </select>
                         
-                        <input type="file" name="archivo_doc" required style="margin-bottom: 15px; width: 100%;">
+                        <input type="file" name="archivo_doc" accept=".pdf, .jpg, .jpeg, .png" required style="margin-bottom: 15px; width: 100%;">
                         <button type="submit" class="btn-nuevo" style="width: 100%; background-color: var(--azul-primario);">⬆️ Cargar Documento</button>
                     </form>
                 </div>
@@ -1719,8 +1710,8 @@ $oferta_cursos = [
         <section id="vista-recursos-salud" class="vista-panel">
             <header class="top-bar">
                 <div class="user-welcome">
-                    <h1>Recursos y Salud</h1>
-                    <p style="color: #666;">Capacitaciones docentes y legajos médicos de alumnos.</p>
+                    <h1>Desarrollo Profesional</h1>
+                    <p style="color: #666;">Inscripción a capacitaciones institucionales y avisos.</p>
                 </div>
                 <div class="user-profile">
                     <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
@@ -1729,49 +1720,64 @@ $oferta_cursos = [
             </header>
 
             <div class="dashboard-grid">
-                <?php foreach ($oferta_cursos as $curso): ?>
-                <div class="stat-card">
-                    <h3><?php echo $curso['icono'] . " " . $curso['nombre']; ?></h3>
-                    <p style="color: #666; font-size: 0.9rem; margin-top: 5px;">Horario: <?php echo $curso['horario']; ?></p>
-                    
-                    <form action="procesos/procesar_capacitacion.php" method="POST" style="margin-top: 15px;">
-                        <input type="hidden" name="curso_nombre" value="<?php echo $curso['nombre']; ?>">
+                <?php if (empty($todas_las_capacitaciones)): ?>
+                    <div class="stat-card" style="grid-column: 1 / -1;">
+                        <p style="text-align: center; color: #888;">No hay capacitaciones programadas por el momento.</p>
+                    </div>
+                <?php else: ?>
+                    <?php foreach (array_reverse($todas_las_capacitaciones) as $cap): 
+                        $fecha_hora_str = $cap['fecha'] . ' ' . $cap['hora'];
+                        $esta_finalizada = time() > strtotime($fecha_hora_str);
+                        $inscriptos = $cap['inscriptos'] ?? [];
+                        $estoy_inscripto = in_array($nombre_completo_actual, $inscriptos);
+                    ?>
+                    <div class="stat-card" style="border-left-color: <?php echo $esta_finalizada ? '#ccc' : 'var(--azul-primario)'; ?>; opacity: <?php echo $esta_finalizada ? '0.7' : '1'; ?>;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <h3 style="margin-bottom: 5px;"><?php echo htmlspecialchars($cap['titulo']); ?></h3>
+                            <?php if ($esta_finalizada): ?>
+                                <span class="badge" style="background: #eee; color: #888;">Finalizada</span>
+                            <?php elseif ($estoy_inscripto): ?>
+                                <span class="badge badge-aprobado">Inscripto/a</span>
+                            <?php endif; ?>
+                        </div>
                         
-                        <?php if (in_array($curso['nombre'], $mis_capacitaciones)): ?>
-                            <input type="hidden" name="accion" value="baja">
-                            <button type="submit" class="btn-accion" style="width: 100%; color: var(--naranja); border-color: var(--naranja); background: #fff5f2;">
-                                ❌ Cancelar Inscripción
-                            </button>
-                        <?php else: ?>
-                            <input type="hidden" name="accion" value="inscribir">
-                            <button type="submit" class="btn-nuevo" style="width: 100%; background-color: var(--azul-primario);">
-                                ✅ Inscribirme
-                            </button>
+                        <hr style="border: 0; border-top: 1px dashed #ddd; margin: 10px 0;">
+                        <p style="color: #555; font-size: 0.9rem;">📅 <strong>Fecha:</strong> <?php echo date('d/m/Y', strtotime($cap['fecha'])); ?> a las <?php echo htmlspecialchars($cap['hora']); ?> hs</p>
+                        <p style="color: #555; font-size: 0.9rem; margin-top: 5px;">📍 <strong>Lugar:</strong> <?php echo htmlspecialchars($cap['lugar']); ?></p>
+                        
+                        <?php if (!$esta_finalizada): ?>
+                            <form action="procesos/procesar_capacitacion.php" method="POST" style="margin-top: 15px;">
+                                <input type="hidden" name="id_cap" value="<?php echo htmlspecialchars($cap['id']); ?>">
+                                <?php if ($estoy_inscripto): ?>
+                                    <input type="hidden" name="accion" value="baja">
+                                    <button type="submit" class="btn-accion" style="width: 100%; color: var(--naranja); border-color: var(--naranja); background: #fff5f2;">❌ Cancelar Inscripción</button>
+                                <?php else: ?>
+                                    <input type="hidden" name="accion" value="inscribir">
+                                    <button type="submit" class="btn-nuevo" style="width: 100%; background-color: var(--azul-primario);">✅ Inscribirme</button>
+                                <?php endif; ?>
+                            </form>
                         <?php endif; ?>
-                    </form>
-                </div>
-                <?php endforeach; ?>
+                    </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
 
-                <div class="stat-card" style="grid-column: 1 / -1;">
-                    <h3>🏥 Consulta de Legajos Médicos</h3>
-                    <p style="margin-bottom: 15px; color: #666;">Acceso a los certificados de salud y justificaciones de inasistencia de tus alumnos.</p>
+                <?php if ($es_maestro_primaria): ?>
+                <div class="stat-card" style="grid-column: 1 / -1; margin-top: 20px; border-left-color: var(--violeta);">
+                    <h3 style="color: var(--violeta);">🏥 Consulta de Legajos Médicos (Primaria)</h3>
+                    <p style="margin-bottom: 15px; color: #666;">Acceso a los certificados de salud y justificaciones de tus alumnos.</p>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; flex-direction: column;">
                         <?php
-                        // 1. Recopilamos todos los alumnos únicos del profe
                         $mis_alumnos_unicos = [];
                         foreach ($mis_cursos as $curso) {
                             $clave_c = $curso['curso'] . "_" . $curso['division'];
                             if (isset($alumnos_por_curso[$clave_c])) {
                                 foreach ($alumnos_por_curso[$clave_c] as $alum) {
                                     $alum_limpio = trim($alum);
-                                    if (!in_array($alum_limpio, $mis_alumnos_unicos)) {
-                                        $mis_alumnos_unicos[] = $alum_limpio;
-                                    }
+                                    if (!in_array($alum_limpio, $mis_alumnos_unicos)) $mis_alumnos_unicos[] = $alum_limpio;
                                 }
                             }
                         }
 
-                        // 2. Revisamos los documentos de esos alumnos
                         $hay_legajos = false;
                         foreach ($mis_alumnos_unicos as $alum) {
                             $apto = $todos_los_documentos[$alum]['Apto Físico'] ?? null;
@@ -1779,68 +1785,25 @@ $oferta_cursos = [
 
                             if ($apto || $certificados) {
                                 $hay_legajos = true;
-                                echo '<div style="margin-bottom: 10px; padding: 12px; background: #f9f9f9; border-radius: 8px; width: 100%; border-left: 3px solid var(--azul-primario);">';
-                                echo '<strong style="color: var(--azul-primario);">👤 ' . htmlspecialchars($alum) . '</strong><br>';
+                                echo '<div style="margin-bottom: 10px; padding: 12px; background: #f9f9f9; border-radius: 8px; width: 100%; border-left: 3px solid var(--violeta);">';
+                                echo '<strong>👤 ' . htmlspecialchars($alum) . '</strong><br>';
                                 echo '<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">';
                                 
-                                if ($apto) {
-                                    echo '<a href="' . htmlspecialchars($apto['archivo']) . '" target="_blank" class="btn-accion" style="text-decoration: none; border-color: var(--verde); color: var(--verde); background: #e6f6ec;">📄 Apto Físico</a>';
-                                }
-
+                                if ($apto) echo '<a href="' . htmlspecialchars($apto['archivo']) . '" target="_blank" class="btn-accion" style="text-decoration: none; border-color: var(--verde); color: var(--verde); background: #e6f6ec;">📄 Apto Físico</a>';
                                 if ($certificados && is_array($certificados)) {
-                                    foreach ($certificados as $idx => $cert) {
-                                        $solo_fecha = explode(' ', $cert['fecha'])[0]; // Cortamos la hora para que quede lindo
+                                    foreach ($certificados as $cert) {
+                                        $solo_fecha = explode(' ', $cert['fecha'])[0];
                                         echo '<a href="' . htmlspecialchars($cert['archivo']) . '" target="_blank" class="btn-accion" style="text-decoration: none; border-color: var(--naranja); color: var(--naranja); background: #fff5f2;">🩺 Justificativo (' . $solo_fecha . ')</a>';
                                     }
                                 }
                                 echo '</div></div>';
                             }
                         }
-
-                        if (!$hay_legajos) {
-                            echo '<p style="color: #999; font-size: 0.9rem;">Ningún alumno a tu cargo ha subido documentación médica aún.</p>';
-                        }
+                        if (!$hay_legajos) echo '<p style="color: #999; font-size: 0.9rem;">Tus alumnos no han subido documentación médica aún.</p>';
                         ?>
                     </div>
                 </div>
-
-                <div class="stat-card" style="grid-column: 1 / -1;">
-                    <h3>🏥 Consulta de Legajos Médicos</h3>
-                    <p style="margin-bottom: 15px; color: #666;">Acceso a los certificados de salud (Apto Físico) de los alumnos a tu cargo.</p>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <?php
-                        // 1. Recopilamos todos los alumnos únicos que el profesor tiene en sus cursos
-                        $mis_alumnos_unicos = [];
-                        foreach ($mis_cursos as $curso) {
-                            $clave_c = $curso['curso'] . "_" . $curso['division'];
-                            if (isset($alumnos_por_curso[$clave_c])) {
-                                foreach ($alumnos_por_curso[$clave_c] as $alum) {
-                                    $alum_limpio = trim($alum);
-                                    if (!in_array($alum_limpio, $mis_alumnos_unicos)) {
-                                        $mis_alumnos_unicos[] = $alum_limpio;
-                                    }
-                                }
-                            }
-                        }
-
-                        // 2. Revisamos en documentos.json cuáles de ESOS alumnos tienen subido el certificado
-                        $hay_legajos = false;
-                        foreach ($mis_alumnos_unicos as $alum) {
-                            if (isset($todos_los_documentos[$alum]['Certificado Médico / Apto Físico'])) {
-                                $hay_legajos = true;
-                                $ruta_archivo = $todos_los_documentos[$alum]['Certificado Médico / Apto Físico']['archivo'] ?? '#';
-                                
-                                // Dibujamos el botón que abre el archivo en una pestaña nueva
-                                echo '<a href="' . htmlspecialchars($ruta_archivo) . '" target="_blank" class="btn-accion" style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">📄 ' . htmlspecialchars($alum) . '</a>';
-                            }
-                        }
-
-                        if (!$hay_legajos) {
-                            echo '<p style="color: #999; font-size: 0.9rem;">Ningún alumno a tu cargo ha subido su certificado médico aún.</p>';
-                        }
-                        ?>
-                    </div>
-                </div>
+                <?php endif; ?>
             </div>
         </section>
 
@@ -2044,6 +2007,93 @@ $oferta_cursos = [
                 </div>
             </div>
         </section>
+
+        <?php if ($es_admin): ?>
+        <section id="vista-admin-capacitaciones" class="vista-panel">
+            <header class="top-bar">
+                <div class="user-welcome">
+                    <h1>Gestión de Capacitaciones</h1>
+                    <p style="color: #666;">Creación de cursos y control de asistencia docente.</p>
+                </div>
+                <div class="user-profile">
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
+                    <div class="user-avatar"><?php echo $iniciales; ?></div>
+                </div>
+            </header>
+
+            <div class="dashboard-grid">
+                <div class="stat-card" style="border-left-color: var(--rosa);">
+                    <h3 style="color: var(--rosa);">Crear Nueva Capacitación</h3>
+                    <form action="procesos/procesar_capacitacion.php" method="POST" style="margin-top: 15px;">
+                        <input type="hidden" name="accion" value="crear">
+                        
+                        <label style="font-size: 0.85rem; font-weight: bold; color: #555;">Título del Curso/Charla:</label>
+                        <input type="text" name="titulo" required style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box;">
+                        
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.85rem; font-weight: bold; color: #555;">Fecha:</label>
+                                <input type="date" name="fecha" required min="<?php echo date('Y-m-d'); ?>" style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #ddd; font-family: inherit; box-sizing: border-box;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.85rem; font-weight: bold; color: #555;">Hora:</label>
+                                <input type="time" name="hora" required style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #ddd; font-family: inherit; box-sizing: border-box;">
+                            </div>
+                        </div>
+
+                        <label style="font-size: 0.85rem; font-weight: bold; color: #555;">Lugar / Aula:</label>
+                        <input type="text" name="lugar" required placeholder="Ej: Salón de Actos" style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 20px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box;">
+                        
+                        <button type="submit" class="btn-nuevo" style="width: 100%; background-color: var(--rosa);">Publicar Capacitación</button>
+                    </form>
+                </div>
+
+                <div class="stat-card" style="grid-column: 1 / -1;">
+                    <h3>Panel de Control de Cursos</h3>
+                    <?php if (empty($todas_las_capacitaciones)): ?>
+                        <p style="color: #999;">No hay capacitaciones creadas.</p>
+                    <?php else: ?>
+                        <?php foreach (array_reverse($todas_las_capacitaciones) as $cap): 
+                            $fecha_hora_str = $cap['fecha'] . ' ' . $cap['hora'];
+                            $esta_finalizada = time() > strtotime($fecha_hora_str);
+                            $inscriptos = $cap['inscriptos'] ?? [];
+                        ?>
+                            <div style="border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 15px; background: <?php echo $esta_finalizada ? '#f9f9f9' : '#fff'; ?>;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <h4 style="margin: 0; color: var(--azul-primario);"><?php echo htmlspecialchars($cap['titulo']); ?></h4>
+                                        <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #666;">
+                                            📅 <?php echo date('d/m/Y', strtotime($cap['fecha'])); ?> | 🕒 <?php echo htmlspecialchars($cap['hora']); ?> hs | 📍 <?php echo htmlspecialchars($cap['lugar']); ?>
+                                        </p>
+                                    </div>
+                                    <form action="procesos/procesar_capacitacion.php" method="POST" style="margin: 0;" onsubmit="return confirm('¿Seguro que querés borrar este curso completo?');">
+                                        <input type="hidden" name="accion" value="borrar">
+                                        <input type="hidden" name="id_cap" value="<?php echo htmlspecialchars($cap['id']); ?>">
+                                        <button type="submit" class="btn-accion" style="color: var(--naranja); border-color: var(--naranja);">🗑️ Borrar</button>
+                                    </form>
+                                </div>
+                                
+                                <details style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ddd;">
+                                    <summary style="cursor: pointer; font-size: 0.9rem; font-weight: bold; color: var(--verde);">
+                                        👥 Ver Inscriptos (<?php echo count($inscriptos); ?> docentes)
+                                    </summary>
+                                    <ul style="margin-top: 10px; padding-left: 20px; font-size: 0.9rem; color: #444;">
+                                        <?php if (empty($inscriptos)): ?>
+                                            <li>Nadie se ha inscripto aún.</li>
+                                        <?php else: ?>
+                                            <?php foreach ($inscriptos as $docente): ?>
+                                                <li><?php echo htmlspecialchars($docente); ?></li>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </ul>
+                                </details>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
 
         <section id="vista-comedor" class="vista-panel">
             <header class="top-bar">
@@ -2469,7 +2519,7 @@ $oferta_cursos = [
                     </div>
                     <div class="input-group">
                         <label>Archivo Adjunto (Opcional)</label>
-                        <input type="file" name="archivo_adjunto" style="padding: 8px;">
+                        <input type="file" name="archivo_adjunto" accept=".pdf, .jpg, .jpeg, .png, .doc, .docx, .xls, .xlsx" style="padding: 8px;">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -2494,7 +2544,7 @@ $oferta_cursos = [
                     </div>
                     <div class="input-group" style="grid-column: 1 / -1;">
                         <label>Subir Archivo de Trabajo</label>
-                        <input type="file" name="archivo_entrega" style="padding: 8px;">
+                        <input type="file" name="archivo_entrega" accept=".pdf, .jpg, .jpeg, .png, .doc, .docx" style="padding: 8px;">
                     </div>
                 </div>
                 <div class="modal-footer">

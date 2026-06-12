@@ -1,5 +1,7 @@
 <?php
 session_start();
+// Sincronizamos el reloj antes de guardar la falta
+date_default_timezone_set('America/Argentina/Buenos_Aires');
 
 // Validamos que solo puedan entrar Profesores (primaria) o Preceptores
 if (!isset($_SESSION['rol']) || !in_array($_SESSION['rol'], ['preceptor', 'profesor'])) {

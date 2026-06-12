@@ -1,5 +1,8 @@
 <?php
 session_start();
+// Configuramos el reloj del sistema para nuestra región
+date_default_timezone_set('America/Argentina/Buenos_Aires');
+
 if (!isset($_SESSION['usuario'])) {
     header('Location: login.php');
     exit;
@@ -208,14 +211,12 @@ if (file_exists($archivo_menu)) {
     $menu_hoy = json_decode(file_get_contents($archivo_menu), true) ?: $menu_hoy;
 }
 
-// LÓGICA PARA TALLERES Y DEPORTES
-$catalogo_talleres = [
-    "robotica" => ["titulo" => "Programación y Robótica", "nivel" => "Básico / Intermedio", "horarios" => "Mar y Jue 15:00 hs", "lugar" => "Laboratorio TIC"],
-    "futbol" => ["titulo" => "Fútbol Juvenil", "nivel" => "Competitivo (Sub-18)", "horarios" => "Lun y Mié 16:00 hs", "lugar" => "Cancha Principal"],
-    "ajedrez" => ["titulo" => "Club de Ajedrez Clásico", "nivel" => "Todos los niveles", "horarios" => "Viernes 17:00 hs", "lugar" => "Biblioteca"],
-    "natacion" => ["titulo" => "Natación Inicial", "nivel" => "Principiantes", "horarios" => "Sábados 10:00 hs", "lugar" => "Pileta Climatizada"],
-    "fotografia" => ["titulo" => "Taller de Fotografía", "nivel" => "Uso de cámaras DSLR", "horarios" => "Miércoles 18:00 hs", "lugar" => "Salón de Arte"]
-];
+// LÓGICA PARA TALLERES Y DEPORTES (NUEVA VERSIÓN DINÁMICA)
+$archivo_talleres_din = __DIR__ . '/data/talleres_dinamicos.json';
+$todos_los_talleres = [];
+if (file_exists($archivo_talleres_din)) {
+    $todos_los_talleres = json_decode(file_get_contents($archivo_talleres_din), true) ?: [];
+}
 
 $archivo_talleres = __DIR__ . '/data/talleres.json';
 $mis_talleres = [];
@@ -850,6 +851,9 @@ if (file_exists($archivo_cap)) {
         .nav-item[data-vista="vista-mantenimiento"].menu-activo { color: var(--azul-primario); border-right: 4px solid var(--azul-primario); }
         #vista-mantenimiento .stat-card { border-left-color: var(--azul-primario); }
 
+        .nav-item[data-vista="vista-admin-talleres"].menu-activo { color: var(--verde); border-right: 4px solid var(--verde); }
+        #vista-admin-talleres .stat-card { border-left-color: var(--verde); }
+
         .nav-item[data-vista="vista-asistencia-preceptor"].menu-activo { color: var(--celeste); border-right: 4px solid var(--celeste); }  
         .nav-item[data-vista="vista-documentos-preceptor"].menu-activo { color: var(--celeste); border-right: 4px solid var(--celeste); }
         .item-hijo:hover { background-color: #eef2f5; border-radius: 4px; }
@@ -945,7 +949,7 @@ if (file_exists($archivo_cap)) {
             <a href="#" class="nav-item menu-activo" data-vista="vista-usuarios"><i>👥</i> <span>Gestión de Usuarios</span></a>
             <a href="#" class="nav-item" data-vista="vista-cursos"><i>📚</i> <span>Asignación de Cátedras</span></a>
             <a href="#" class="nav-item" data-vista="vista-admin-capacitaciones"><i>🎓</i> <span>Gestión Capacitaciones</span></a>
-            <a href="#" class="nav-item" data-vista="vista-comedor"><i>🥗</i> <span>Comedor</span></a>
+            <a href="#" class="nav-item" data-vista="vista-admin-talleres"><i>🏀</i> <span>Gestión Talleres</span></a> <a href="#" class="nav-item" data-vista="vista-comedor"><i>🥗</i> <span>Comedor</span></a>
             <a href="#" class="nav-item" data-vista="vista-transporte"><i>🚌</i> <span>Rutas de Transporte</span></a>
             <a href="#" class="nav-item" data-vista="vista-mantenimiento"><i>🛠️</i> <span>Mantenimiento</span></a>
         </div>
@@ -1244,45 +1248,64 @@ if (file_exists($archivo_cap)) {
         <section id="vista-talleres" class="vista-panel">
             <header class="top-bar">
                 <div class="user-welcome">
-                    <h1>Mis Actividades Extra</h1>
-                    <p style="color: #666;">Talleres y deportes en los que el alumno participa.</p>
+                    <h1>Talleres y Deportes</h1>
+                    <p style="color: #666;">Inscripción a las actividades extracurriculares y clubes escolares.</p>
                 </div>
                 <div class="user-profile">
                     <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
-            
-            <?php if (!$es_profesor): ?>
-            <div style="margin-bottom: 25px;">
-                <button class="btn-nuevo" id="btn-abrir-talleres" style="background-color: var(--verde);">+ Inscribirse a Taller</button>
-            </div>
-            <?php endif; ?>
 
             <div class="dashboard-grid">
-                <?php if (empty($mis_talleres)): ?>
+                <?php if (empty($todos_los_talleres)): ?>
                     <div class="stat-card" style="grid-column: 1 / -1;">
-                        <p style="text-align: center; color: #888;">No estás inscripto en ninguna actividad. ¡Anotate en algo nuevo!</p>
+                        <p style="text-align: center; color: #888;">No hay talleres o deportes disponibles en este momento.</p>
                     </div>
                 <?php else: ?>
-                    <?php foreach ($mis_talleres as $id_taller): ?>
-                        <?php if(isset($catalogo_talleres[$id_taller])): $info = $catalogo_talleres[$id_taller]; ?>
-                        <div class="stat-card">
-                            <h3><?php echo $info['titulo']; ?></h3>
-                            <p style="color: #888; font-size: 0.9rem;"><?php echo $info['nivel']; ?></p>
-                            <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
-                            <p>🕒 <strong>Días:</strong> <?php echo $info['horarios']; ?></p>
-                            <p>📍 <strong>Lugar:</strong> <?php echo $info['lugar']; ?></p>
-                            
-                            <?php if (!$es_profesor): ?>
-                            <form action="procesos/procesar_taller.php" method="POST" style="margin-top: 15px;">
-                                <input type="hidden" name="accion" value="baja">
-                                <input type="hidden" name="taller_id" value="<?php echo $id_taller; ?>">
-                                <button type="submit" class="btn-accion" style="width: 100%; color: var(--naranja); border-color: var(--naranja); background: #fff5f2;">❌ Darse de baja</button>
-                            </form>
+                    <?php foreach (array_reverse($todos_los_talleres) as $taller): 
+                        $fecha_hora_str = $taller['fecha'] . ' ' . $taller['hora'];
+                        $esta_finalizado = time() > strtotime($fecha_hora_str);
+                        $inscriptos = $taller['inscriptos'] ?? [];
+                        
+                        // Si es tutor, $nombre_completo_actual contiene el nombre del hijo, haciendo que esto funcione de diez
+                        $estoy_inscripto = in_array($nombre_completo_actual, $inscriptos);
+                    ?>
+                    <div class="stat-card" style="border-left-color: <?php echo $esta_finalizado ? '#ccc' : 'var(--verde)'; ?>; opacity: <?php echo $esta_finalizado ? '0.7' : '1'; ?>;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <h3 style="margin-bottom: 5px;"><?php echo htmlspecialchars($taller['titulo']); ?></h3>
+                            <?php if ($esta_finalizado): ?>
+                                <span class="badge" style="background: #eee; color: #888;">Finalizado</span>
+                            <?php elseif ($estoy_inscripto): ?>
+                                <span class="badge badge-aprobado">Inscripto/a</span>
                             <?php endif; ?>
                         </div>
+                        <p style="color: #888; font-size: 0.85rem; font-weight: bold; margin-bottom: 10px;">🎯 Nivel: <?php echo htmlspecialchars($taller['nivel']); ?></p>
+                        
+                        <hr style="border: 0; border-top: 1px dashed #ddd; margin: 10px 0;">
+                        <p style="color: #555; font-size: 0.9rem;">🕒 <strong>Horario de Encuentro:</strong> <?php echo date('d/m/Y', strtotime($taller['fecha'])); ?> - <?php echo htmlspecialchars($taller['hora']); ?> hs</p>
+                        <p style="color: #555; font-size: 0.9rem; margin-top: 5px;">📍 <strong>Lugar / Sector:</strong> <?php echo htmlspecialchars($taller['lugar']); ?></p>
+                        
+                        <?php if (!$esta_finalizado && !$es_profesor): ?>
+                            <form action="procesos/procesar_taller.php" method="POST" style="margin-top: 15px;">
+                                <input type="hidden" name="id_taller" value="<?php echo htmlspecialchars($taller['id']); ?>">
+                                
+                                <?php if ($es_tutor): ?>
+                                    <?php if (!$estoy_inscripto): ?>
+                                        <p style="text-align: center; color: #999; font-size: 0.85rem; margin-top: 10px; font-style: italic;">El alumno no participa de esta actividad.</p>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <?php if ($estoy_inscripto): ?>
+                                        <input type="hidden" name="accion" value="baja">
+                                        <button type="submit" class="btn-accion" style="width: 100%; color: var(--naranja); border-color: var(--naranja); background: #fff5f2;">❌ Cancelar Inscripción</button>
+                                    <?php else: ?>
+                                        <input type="hidden" name="accion" value="inscribir">
+                                        <button type="submit" class="btn-nuevo" style="width: 100%; background-color: var(--verde);">⚽ Inscribirme ahora</button>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            </form>
                         <?php endif; ?>
+                    </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
@@ -2095,6 +2118,96 @@ if (file_exists($archivo_cap)) {
         </section>
         <?php endif; ?>
 
+        <?php if ($es_admin): ?>
+        <section id="vista-admin-talleres" class="vista-panel">
+            <header class="top-bar">
+                <div class="user-welcome">
+                    <h1>Gestión de Talleres y Deportes</h1>
+                    <p style="color: #666;">Apertura de convocatorias extracurriculares y grilla de alumnos inscriptos.</p>
+                </div>
+                <div class="user-profile">
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
+                    <div class="user-avatar"><?php echo $iniciales; ?></div>
+                </div>
+            </header>
+
+            <div class="dashboard-grid">
+                <div class="stat-card" style="border-left-color: var(--verde);">
+                    <h3 style="color: var(--verde);">Abrir Nueva Convocatoria</h3>
+                    <form action="procesos/procesar_taller.php" method="POST" style="margin-top: 15px;">
+                        <input type="hidden" name="accion" value="crear">
+                        
+                        <label style="font-size: 0.85rem; font-weight: bold; color: #555;">Nombre de la Actividad:</label>
+                        <input type="text" name="titulo" placeholder="Ej: Club de Ajedrez o Básquet Femenino" required style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box;">
+                        
+                        <label style="font-size: 0.85rem; font-weight: bold; color: #555;">Nivel / Categoría:</label>
+                        <input type="text" name="nivel" placeholder="Ej: Principiantes o Sub-18 Competitivo" required style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box;">
+
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.85rem; font-weight: bold; color: #555;">Fecha de Inicio/Encuentro:</label>
+                                <input type="date" name="fecha" required min="<?php echo date('Y-m-d'); ?>" style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #ddd; font-family: inherit; box-sizing: border-box;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.85rem; font-weight: bold; color: #555;">Hora:</label>
+                                <input type="time" name="hora" required style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #ddd; font-family: inherit; box-sizing: border-box;">
+                            </div>
+                        </div>
+
+                        <label style="font-size: 0.85rem; font-weight: bold; color: #555;">Lugar / Instalación:</label>
+                        <input type="text" name="lugar" required placeholder="Ej: Gimnasio Cubierto o Biblioteca" style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 20px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box;">
+                        
+                        <button type="submit" class="btn-nuevo" style="width: 100%; background-color: var(--verde);">Publicar Actividad</button>
+                    </form>
+                </div>
+
+                <div class="stat-card" style="grid-column: 1 / -1;">
+                    <h3>Grilla Operativa de Talleres</h3>
+                    <?php if (empty($todos_los_talleres)): ?>
+                        <p style="color: #999;">No hay actividades extracurriculares creadas todavía.</p>
+                    <?php else: ?>
+                        <?php foreach (array_reverse($todos_los_talleres) as $taller): 
+                            $fecha_hora_str = $taller['fecha'] . ' ' . $taller['hora'];
+                            $esta_finalizado = time() > strtotime($fecha_hora_str);
+                            $inscriptos = $taller['inscriptos'] ?? [];
+                        ?>
+                            <div style="border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 15px; background: <?php echo $esta_finalizada ? '#f9f9f9' : '#fff'; ?>;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <h4 style="margin: 0; color: var(--azul-primario);"><?php echo htmlspecialchars($taller['titulo']); ?> <small style="color:#666;">(<?php echo htmlspecialchars($taller['nivel']); ?>)</small></h4>
+                                        <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #666;">
+                                            📅 <?php echo date('d/m/Y', strtotime($taller['fecha'])); ?> | 🕒 <?php echo htmlspecialchars($taller['hora']); ?> hs | 📍 <?php echo htmlspecialchars($taller['lugar']); ?>
+                                        </p>
+                                    </div>
+                                    <form action="procesos/procesar_taller.php" method="POST" style="margin: 0;" onsubmit="return confirm('¿Seguro que querés dar de baja este taller por completo?');">
+                                        <input type="hidden" name="accion" value="borrar">
+                                        <input type="hidden" name="id_taller" value="<?php echo htmlspecialchars($taller['id']); ?>">
+                                        <button type="submit" class="btn-accion" style="color: var(--naranja); border-color: var(--naranja);">🗑️ Eliminar</button>
+                                    </form>
+                                </div>
+                                
+                                <details style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ddd;">
+                                    <summary style="cursor: pointer; font-size: 0.9rem; font-weight: bold; color: var(--verde);">
+                                        🎒 Alumnos Matriculados (<?php echo count($inscriptos); ?> inscriptos)
+                                    </summary>
+                                    <ul style="margin-top: 10px; padding-left: 20px; font-size: 0.9rem; color: #444;">
+                                        <?php if (empty($inscriptos)): ?>
+                                            <li>Ningún alumno se ha anotado aún.</li>
+                                        <?php else: ?>
+                                            <?php foreach ($inscriptos as $alumno): ?>
+                                                <li>🎒 <?php echo htmlspecialchars($alumno); ?></li>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </ul>
+                                </details>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
+
         <section id="vista-comedor" class="vista-panel">
             <header class="top-bar">
                 <div class="user-welcome">
@@ -2209,12 +2322,12 @@ if (file_exists($archivo_cap)) {
             </div>
         </section>
 
-        <?php if ($es_alumno): ?>
+        <?php if ($es_alumno || $es_tutor): ?>
         <section id="vista-asistencia-alumno" class="vista-panel">
             <header class="top-bar">
                 <div class="user-welcome">
-                    <h1>Mis Inasistencias</h1>
-                    <p style="color: #666;">Historial de faltas registradas.</p>
+                    <h1>Registro de Inasistencias</h1>
+                    <p style="color: #666;">Historial de faltas registradas en el sistema.</p>
                 </div>
                 <div class="user-profile">
                     <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
@@ -2452,37 +2565,6 @@ if (file_exists($archivo_cap)) {
 
     </main>
     
-
-    <div class="modal-overlay" id="modal-talleres">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h2>Inscripción a Nuevo Taller</h2>
-                <button class="btn-cerrar-modal" id="btn-cerrar-taller">×</button>
-            </div>
-            <form action="procesos/procesar_taller.php" method="POST" class="form-dashboard">
-                <input type="hidden" name="accion" value="inscribir">
-                <div class="input-group">
-                    <label for="seleccionar-taller">Seleccione el Taller / Deporte</label>
-                    <select name="taller_id" id="seleccionar-taller" required style="margin-bottom: 20px;">
-                        <option value="" disabled selected>Opciones disponibles...</option>
-                        <?php 
-                        // Mostramos las opciones del catálogo
-                        foreach ($catalogo_talleres as $id => $info) {
-                            // Si el alumno NO está inscripto en este taller, lo mostramos en la lista
-                            if (!in_array($id, $mis_talleres)) {
-                                echo "<option value='{$id}'>{$info['titulo']} ({$info['horarios']})</option>";
-                            }
-                        }
-                        ?>
-                    </select>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-cancelar" id="btn-cancelar-taller">Cancelar</button>
-                    <button type="submit" class="btn-guardar" style="background-color: var(--verde);">Confirmar Inscripción</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <div class="modal-overlay" id="modal-crear-actividad">
         <div class="modal-box">

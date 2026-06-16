@@ -1,6 +1,5 @@
 <?php
 session_start();
-
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
     header('Location: ../dashboard.php');
     exit;
@@ -8,104 +7,94 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nombre = trim($_POST['nombre'] ?? '');
-    $rol = $_POST['rol'] ?? '';
+    $rol = trim($_POST['rol'] ?? '');
     $usuario = trim($_POST['usuario'] ?? '');
-    $password = $_POST['password'] ?? '';
+    $password_plana = trim($_POST['password'] ?? '');
 
-    // 1. GUARDAR USUARIO
-    $archivo_usuarios = __DIR__ . '/../data/usuarios.json';
-    if (!file_exists(__DIR__ . '/../data')) {
-        mkdir(__DIR__ . '/../data', 0777, true);
-    }
-    $usuarios = file_exists($archivo_usuarios) ? json_decode(file_get_contents($archivo_usuarios), true) : [];
+    if (!empty($nombre) && !empty($rol) && !empty($usuario) && !empty($password_plana)) {
+        $archivo_usuarios = __DIR__ . '/../data/usuarios.json';
+        $usuarios = file_exists($archivo_usuarios) ? json_decode(file_get_contents($archivo_usuarios), true) : [];
 
-    foreach ($usuarios as $u) {
-        if (strtolower($u['usuario']) === strtolower($usuario)) {
-            header('Location: ../dashboard.php?vista=vista-usuarios&error=duplicado');
-            exit;
-        }
-    }
-
-    $usuarios[] = [
-        'nombre' => $nombre,
-        'usuario' => $usuario,
-        'password' => $password,
-        'rol' => $rol
-    ];
-    file_put_contents($archivo_usuarios, json_encode($usuarios, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-
-    // 2. SI ES PROFESOR O PRECEPTOR -> Asignar cátedra
-    if ($rol === 'profesor' || $rol === 'preceptor') {
-        $archivo_asig = __DIR__ . '/../data/asignaciones.json';
-        $asignaciones = file_exists($archivo_asig) ? json_decode(file_get_contents($archivo_asig), true) : [];
-
-        if (!isset($asignaciones[$nombre])) $asignaciones[$nombre] = [];
-
-        $nivel_elegido = $_POST['nivel_asig'] ?? 'secundaria';
-        
-        if ($rol === 'preceptor') {
-            $materia_a_guardar = 'Preceptor/a';
-            $nivel_elegido = 'secundaria';
-        } else {
-            $materia_a_guardar = ($nivel_elegido === 'primaria') ? 'Maestro/a de Grado' : ($_POST['materia_asig'] ?? '');
+        // Validar que el login no exista
+        foreach ($usuarios as $u) {
+            if (strtolower($u['usuario']) === strtolower($usuario)) {
+                header('Location: ../dashboard.php?vista=vista-usuarios&error=duplicado');
+                exit;
+            }
         }
 
-        $asignaciones[$nombre][] = [
-            "nivel" => $nivel_elegido,
-            "curso" => $_POST['curso_asig'] ?? '',
-            "division" => $_POST['division_asig'] ?? '',
-            "materia" => $materia_a_guardar,
-            "turno" => "Mañana" 
+        $nuevo_usuario = [
+            'nombre' => $nombre,
+            'rol' => $rol,
+            'usuario' => $usuario,
+            'password' => password_hash($password_plana, PASSWORD_DEFAULT)
         ];
-        file_put_contents($archivo_asig, json_encode($asignaciones, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-    }
 
-    // 3. SI ES ALUMNO -> Asignarle curso
-    if ($rol === 'alumno') {
-        $curso_al = $_POST['curso_asig_al'] ?? '';
-        $div_al = $_POST['division_asig_al'] ?? '';
-        
-        if (!empty($curso_al) && !empty($div_al)) {
-            $archivo_alumnos = __DIR__ . '/../data/alumnos_cursos.json';
-            $alumnos_cursos = file_exists($archivo_alumnos) ? json_decode(file_get_contents($archivo_alumnos), true) : [];
-            $clave = $curso_al . "_" . $div_al;
+        // --- MAGIA: SI ES ALUMNO, GUARDAMOS SU FICHA COMPLETA ---
+        if ($rol === 'alumno') {
+            $nuevo_usuario['dni'] = trim($_POST['dni'] ?? '');
+            $nuevo_usuario['fecha_nacimiento'] = trim($_POST['fecha_nacimiento'] ?? '');
+            $nuevo_usuario['tutor_nombre'] = trim($_POST['tutor_nombre'] ?? '');
+            $nuevo_usuario['tutor_telefono'] = trim($_POST['tutor_telefono'] ?? '');
+            $nuevo_usuario['tutor_email'] = trim($_POST['tutor_email'] ?? '');
             
-            if (!isset($alumnos_cursos[$clave])) {
-                $alumnos_cursos[$clave] = [];
-            }
-            $alumnos_cursos[$clave][] = $nombre;
-            file_put_contents($archivo_alumnos, json_encode($alumnos_cursos, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-        }
-    }
-
-    // 4. SI ES TUTOR -> Vincular con hijos (LA MAGIA ESTÁ ACÁ)
-    if ($rol === 'tutor') {
-        $hijos = $_POST['hijos_asignados'] ?? []; // Recibe el array de las casillas tildadas
-        
-        $archivo_tutores = __DIR__ . '/../data/tutores_alumnos.json';
-        $tutores = file_exists($archivo_tutores) ? json_decode(file_get_contents($archivo_tutores), true) : [];
-        
-        if (!isset($tutores[$usuario])) {
-            $tutores[$usuario] = [];
-        }
-        
-        // Si el administrador tildó hijos, los guardamos en el perfil del tutor
-        if (!empty($hijos) && is_array($hijos)) {
-            foreach ($hijos as $hijo) {
-                $hijo_limpio = trim($hijo);
-                if (!empty($hijo_limpio) && !in_array($hijo_limpio, $tutores[$usuario])) {
-                    $tutores[$usuario][] = $hijo_limpio; 
+            // Asignación de curso
+            $curso = trim($_POST['curso_asig_al'] ?? '');
+            $div = trim($_POST['division_asig_al'] ?? '');
+            if (!empty($curso) && !empty($div)) {
+                $archivo_ac = __DIR__ . '/../data/alumnos_cursos.json';
+                $alumnos_cursos = file_exists($archivo_ac) ? json_decode(file_get_contents($archivo_ac), true) : [];
+                $clave_c = $curso . "_" . $div;
+                if (!isset($alumnos_cursos[$clave_c])) $alumnos_cursos[$clave_c] = [];
+                if (!in_array($nombre, $alumnos_cursos[$clave_c])) {
+                    $alumnos_cursos[$clave_c][] = $nombre;
                 }
+                file_put_contents($archivo_ac, json_encode($alumnos_cursos, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            }
+        } 
+        // Asignaciones para otros roles
+        elseif ($rol === 'profesor' || $rol === 'preceptor') {
+            $nivel = trim($_POST['nivel_asig'] ?? '');
+            $curso = trim($_POST['curso_asig'] ?? '');
+            $div = trim($_POST['division_asig'] ?? '');
+            $materia = trim($_POST['materia_asig'] ?? '');
+            if ($rol === 'preceptor') {
+                $materia = 'Preceptor/a';
+                $nivel = 'secundaria';
+            }
+
+            if (!empty($nivel) && !empty($curso) && !empty($div) && !empty($materia)) {
+                $archivo_asig = __DIR__ . '/../data/asignaciones.json';
+                $asignaciones = file_exists($archivo_asig) ? json_decode(file_get_contents($archivo_asig), true) : [];
+                if (!isset($asignaciones[$nombre])) $asignaciones[$nombre] = [];
+                
+                $asignaciones[$nombre][] = [
+                    'nivel' => $nivel,
+                    'curso' => $curso,
+                    'division' => $div,
+                    'turno' => 'Mañana',
+                    'materia' => $materia
+                ];
+                file_put_contents($archivo_asig, json_encode($asignaciones, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
             }
         }
-        // Grabamos el archivo asegurando que se actualice o se cree desde cero
-        file_put_contents($archivo_tutores, json_encode($tutores, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        elseif ($rol === 'tutor') {
+            $hijos = $_POST['hijos_asignados'] ?? [];
+            if (!empty($hijos)) {
+                $archivo_tut = __DIR__ . '/../data/tutores_alumnos.json';
+                $tutores = file_exists($archivo_tut) ? json_decode(file_get_contents($archivo_tut), true) : [];
+                $tutores[$nombre] = $hijos;
+                file_put_contents($archivo_tut, json_encode($tutores, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            }
+        }
+
+        $usuarios[] = $nuevo_usuario;
+        file_put_contents($archivo_usuarios, json_encode($usuarios, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        header('Location: ../dashboard.php?vista=vista-usuarios&msj=usuario_creado');
+        exit;
     }
-
-    header('Location: ../dashboard.php?vista=vista-usuarios&msj=usuario_creado');
-    exit;
 }
-
-header('Location: ../dashboard.php');
+header('Location: ../dashboard.php?vista=vista-usuarios');
 exit;
 ?>

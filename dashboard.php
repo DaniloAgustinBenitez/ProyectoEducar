@@ -20,6 +20,10 @@ $es_alumno = ($rol_actual === 'alumno');
 $es_preceptor = ($rol_actual === 'preceptor'); 
 $es_tutor = ($rol_actual === 'tutor'); // ¡NUEVO ROL!
 
+// LÓGICA DE RECUPERACIÓN DE CLAVES
+$archivo_recuperaciones = __DIR__ . '/data/recuperaciones.json';
+$todas_las_recuperaciones = file_exists($archivo_recuperaciones) ? json_decode(file_get_contents($archivo_recuperaciones), true) : [];
+
 // 1. LÓGICA PARA LEER TODOS LOS USUARIOS PRIMERO
 $archivo_usuarios_lista = __DIR__ . '/data/usuarios.json';
 $todos_los_usuarios = [];
@@ -199,6 +203,9 @@ if ($es_alumno || $es_tutor) {
     }
 }
 
+// LÓGICA PARA ENTREVISTAS DE ADMISIÓN
+$archivo_entrevistas = __DIR__ . '/data/entrevistas.json';
+$todas_las_entrevistas = file_exists($archivo_entrevistas) ? json_decode(file_get_contents($archivo_entrevistas), true) : [];
 // LÓGICA PARA EL MENÚ DEL COMEDOR 
 $archivo_menu = __DIR__ . '/data/menu.json';
 $menu_hoy = [
@@ -251,45 +258,18 @@ $archivo_docs = __DIR__ . '/data/documentos.json';
 $mis_documentos = [];
 $todos_los_documentos = []; // <--- ¡Lo hacemos global!
 
-// Lista de lo que hay que entregar
 $tipos_permitidos = [
     'DNI del Alumno',
     'Apto Físico',
     'Partida de Nacimiento',
     'Permiso de Retiro',
-    'Certificado Médico / Justificación de Falta' // Este ahora será infinito
+    'Certificado Médico / Justificación de Falta'
 ];
 
 if (file_exists($archivo_docs)) {
     $todos_los_documentos = json_decode(file_get_contents($archivo_docs), true) ?: [];
-    // Ojo: leemos por nombre completo
     if (isset($todos_los_documentos[$nombre_completo_actual])) {
         $mis_documentos = $todos_los_documentos[$nombre_completo_actual];
-        
-        // --- MAGIA: VALIDACIÓN FÍSICA EN XAMPP ---
-        foreach ($mis_documentos as $tipo => $datos) {
-            if (is_array($datos) && !isset($datos['archivo'])) {
-                // Es una lista infinita (Permisos o Certificados Médicos)
-                foreach ($datos as $idx => $doc_infinito) {
-                    // Si el archivo fue borrado de la carpeta, lo quitamos de la vista
-                    if (!file_exists($doc_infinito['archivo'])) {
-                        unset($mis_documentos[$tipo][$idx]); 
-                    }
-                }
-                // Si borraron todos los de la lista, vaciamos la categoría
-                if (empty($mis_documentos[$tipo])) {
-                    unset($mis_documentos[$tipo]);
-                } else {
-                    $mis_documentos[$tipo] = array_values($mis_documentos[$tipo]); // Reorganiza los números
-                }
-            } else {
-                // Es un documento único (DNI, Partida, Apto)
-                if (isset($datos['archivo']) && !file_exists($datos['archivo'])) {
-                    unset($mis_documentos[$tipo]); // Lo vuelve a poner Pendiente (Naranja)
-                }
-            }
-        }
-        // --- FIN VALIDACIÓN FÍSICA ---
     }
 }
 
@@ -857,6 +837,62 @@ if (file_exists($archivo_cap)) {
         .nav-item[data-vista="vista-asistencia-preceptor"].menu-activo { color: var(--celeste); border-right: 4px solid var(--celeste); }  
         .nav-item[data-vista="vista-documentos-preceptor"].menu-activo { color: var(--celeste); border-right: 4px solid var(--celeste); }
         .item-hijo:hover { background-color: #eef2f5; border-radius: 4px; }
+
+        /* --- 📱 MODO RESPONSIVO (MÓVILES Y TABLETS) --- */
+        @media (max-width: 768px) {
+            /* 1. La barra lateral se convierte en un menú flotante oculto */
+            .sidebar {
+                position: fixed;
+                left: -320px; /* Oculto a la izquierda */
+                z-index: 9999;
+                height: 100vh;
+                box-shadow: 5px 0 25px rgba(0,0,0,0.5);
+            }
+            .sidebar.mobile-active {
+                left: 0; /* Aparece suavemente al tocar el botón */
+            }
+
+            /* 2. Ajustamos los márgenes del contenido principal */
+            .main-content {
+                padding: 15px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            /* 3. El encabezado y los perfiles se apilan para no aplastarse */
+            .top-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            /* 4. Las grillas pasan a ser de 1 sola columna vertical */
+            .dashboard-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* 5. Salvavidas para las Tablas: permite deslizar con el dedo en horizontal */
+            .acordeon-contenido, .stat-card, .tabla-contenedor, [style*="overflow-x: auto"] {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            /* 6. Los Modales (ventanas flotantes) se adaptan a la pantalla chica */
+            .modal-box {
+                width: 95%;
+                margin: 10px;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+            .form-grid {
+                grid-template-columns: 1fr; /* Formularios en 1 sola columna */
+            }
+        }
+
+        /* Ocultamos la barra hamburguesa extra si estamos en la computadora */
+        @media (min-width: 769px) {
+            .mobile-top-bar { display: none; }
+        }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -948,20 +984,42 @@ if (file_exists($archivo_cap)) {
             <span class="section-title" style="border-top: 1px solid #eee; padding-top: 15px;">Administrativo</span>
             <a href="#" class="nav-item menu-activo" data-vista="vista-usuarios"><i>👥</i> <span>Gestión de Usuarios</span></a>
             <a href="#" class="nav-item" data-vista="vista-cursos"><i>📚</i> <span>Asignación de Cátedras</span></a>
+            <a href="#" class="nav-item" data-vista="vista-asignar-alumnos"><i>🎒</i> <span>Asignación de Alumnos</span></a>
             <a href="#" class="nav-item" data-vista="vista-admin-capacitaciones"><i>🎓</i> <span>Gestión Capacitaciones</span></a>
             <a href="#" class="nav-item" data-vista="vista-admin-talleres"><i>🏀</i> <span>Gestión Talleres</span></a> <a href="#" class="nav-item" data-vista="vista-comedor"><i>🥗</i> <span>Comedor</span></a>
             <a href="#" class="nav-item" data-vista="vista-transporte"><i>🚌</i> <span>Rutas de Transporte</span></a>
             <a href="#" class="nav-item" data-vista="vista-mantenimiento"><i>🛠️</i> <span>Mantenimiento</span></a>
+            <a href="#" class="nav-item" data-vista="vista-entrevistas"><i>🤝</i> <span>Entrevistas Admisión</span></a>
         </div>
         <?php endif; ?>
         <div class="menu-section" style="margin-top: auto; padding-bottom: 20px;">
+            <a href="#" class="nav-item" id="btn-abrir-cambiar-clave" style="color: var(--azul-primario); background-color: #f0f4f8; margin-bottom: 10px;">
+                <i>🔑</i> <span style="font-weight: bold;">Cambiar Contraseña</span>
+            </a>
             <a href="procesos/logout.php" class="nav-item" style="color: var(--naranja); background-color: #fff5f2;">
                 <i>🚪</i> <span style="font-weight: bold;">Cerrar Sesión</span>
             </a>
         </div>
-    </aside> 
+    </aside>
 
    <main class="main-content">
+    <div class="mobile-top-bar" style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.5rem;">🎓</span>
+                <span style="color: var(--azul-primario); font-weight: bold; font-size: 1.1rem; letter-spacing: 0.5px;">Portal Educativo</span>
+            </div>
+            <button onclick="toggleSidebar()" style="background: #f0f4f8; border: none; font-size: 1.5rem; color: var(--azul-primario); padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s;">☰</button>
+        </div>
+        <?php if (isset($_GET['msj']) && $_GET['msj'] === 'clave_actualizada'): ?>
+            <div style="background: #e6f6ec; color: var(--verde); padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 20px;">
+                ✅ ¡Tu contraseña se ha actualizado correctamente!
+            </div>
+        <?php endif; ?>
+        <?php if (isset($_GET['error']) && $_GET['error'] === 'clave_incorrecta'): ?>
+            <div style="background: #fff5f2; color: var(--naranja); padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 20px;">
+                ⚠️ La contraseña actual ingresada es incorrecta. No se realizaron cambios.
+            </div>
+        <?php endif; ?>
         
         <section id="vista-documentacion" class="vista-panel <?php echo ($es_alumno || $es_tutor) ? 'vista-activa' : ''; ?>">   
             <header class="top-bar">
@@ -974,6 +1032,26 @@ if (file_exists($archivo_cap)) {
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
+
+            <div class="dashboard-grid">
+                
+                <?php if (isset($_GET['subida'])): ?>
+                <div style="margin-bottom: 20px;">
+                    <?php if ($_GET['subida'] === 'exito'): ?>
+                        <div style="background: #e6f6ec; color: var(--verde); padding: 12px; border-radius: 8px; font-weight: bold;">
+                            ✅ Documento subido y guardado correctamente.
+                        </div>
+                    <?php elseif ($_GET['subida'] === 'error_seguridad'): ?>
+                        <div style="background: #fce8e6; color: var(--naranja); padding: 12px; border-radius: 8px; font-weight: bold;">
+                            ⚠️ Archivo rechazado por seguridad. Solo se permiten formatos .PDF, .JPG o .PNG estándar.
+                        </div>
+                    <?php else: ?>
+                        <div style="background: #fff3cd; color: #856404; padding: 12px; border-radius: 8px; font-weight: bold;">
+                            ⚠️ Hubo un error al procesar el archivo. Es probable que sea demasiado pesado para el servidor.
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
 
             <div class="dashboard-grid">
                 
@@ -1167,6 +1245,117 @@ if (file_exists($archivo_cap)) {
             </div>
         </section>
         <?php endif; ?>
+        <section id="vista-asignar-alumnos" class="vista-panel">
+            <header class="top-bar" style="flex-direction: column; align-items: stretch; gap: 15px;">
+                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'alumno_asignado'): ?>
+                    <div style="background: #e6f6ec; color: var(--verde); padding: 12px; border-radius: 8px; font-weight: bold;">
+                        ✅ Estudiante matriculado y asignado al curso correctamente.
+                    </div>
+                <?php endif; ?>
+                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'alumno_removido'): ?>
+                    <div style="background: #fff5f2; color: var(--naranja); padding: 12px; border-radius: 8px; font-weight: bold;">
+                        🗑️ Estudiante removido del curso con éxito.
+                    </div>
+                <?php endif; ?>
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="user-welcome">
+                        <h1>Asignación de Alumnos</h1>
+                        <p style="color: #666;">Distribuí y mové a los estudiantes en los diferentes años, grados y divisiones del establecimiento.</p>
+                    </div>
+                    <div class="user-profile">
+                        <span class="user-name"><?php echo htmlspecialchars($nombre_completo_actual); ?></span>
+                        <div class="user-avatar"><?php echo $iniciales; ?></div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-grid" style="grid-template-columns: 1fr;">
+                <div class="stat-card" style="border-left-color: var(--azul-primario);">
+                    <h3>Distribución de la Matrícula Escolar</h3>
+                    <p style="color: #888; margin-bottom: 20px;">Abrí cada curso para gestionar sus alumnos inscriptos o agregar nuevos alumnos de la lista general del sistema.</p>
+
+                    <?php
+                    // Recopilamos todos los alumnos con rol de alumno creados en el sistema
+                    $alumnos_totales_sistema = [];
+                    foreach ($todos_los_usuarios as $u) {
+                        if (($u['rol'] ?? '') === 'alumno') {
+                            $alumnos_totales_sistema[] = trim($u['nombre']);
+                        }
+                    }
+                    sort($alumnos_totales_sistema);
+
+                    function renderizarAsignacionAlumnos($cursos, $divisiones, $nivel_nombre, $alumnos_por_curso, $alumnos_totales_sistema) {
+                        echo "<h4 style='color: var(--azul-primario); margin-top: 25px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;'>Alumnos - Nivel {$nivel_nombre}</h4>";
+                        
+                        foreach ($cursos as $id_curso => $label_curso) {
+                            foreach ($divisiones as $div) {
+                                $clave_c = $id_curso . "_" . $div;
+                                $alumnos_este_curso = isset($alumnos_por_curso[$clave_c]) ? $alumnos_por_curso[$clave_c] : [];
+                                ?>
+                                <details class="acordeon-materia" style="border-left-color: var(--azul-primario); margin-bottom: 10px;">
+                                    <summary>
+                                        <strong>🎒 <?php echo $label_curso . " \"" . $div . "\""; ?></strong>
+                                        <span class="badge" style="background-color: var(--fondo-gris); color: var(--azul-primario); border: 1px solid var(--azul-primario);"><?php echo count($alumnos_este_curso); ?> Alumnos</span>
+                                    </summary>
+                                    <div class="acordeon-contenido" style="background: white; padding: 10px 20px;">
+                                        
+                                        <form action="procesos/procesar_asignacion_alumno.php" method="POST" style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center; background: #fafafa; padding: 10px; border-radius: 8px; border: 1px solid #eee;">
+                                            <input type="hidden" name="accion" value="asignar">
+                                            <input type="hidden" name="curso_clave" value="<?php echo $clave_c; ?>">
+                                            
+                                            <label style="font-weight: bold; font-size: 0.9rem; color: #555;">Inscribir Alumno:</label>
+                                            <select name="alumno_nombre" required style="padding: 8px; border: 1px solid #ddd; border-radius: 5px; flex: 1; font-family: inherit; font-size: 0.9rem;">
+                                                <option value="" disabled selected>Seleccionar alumno de la institución...</option>
+                                                <?php foreach ($alumnos_totales_sistema as $nom_al): ?>
+                                                    <option value="<?php echo htmlspecialchars($nom_al); ?>"><?php echo htmlspecialchars($nom_al); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <button type="submit" class="btn-nuevo" style="padding: 8px 15px; font-size: 0.85rem; background-color: var(--verde);">➕ Inscribir / Mover</button>
+                                        </form>
+
+                                        <table class="tabla-datos" style="width: 100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 75%;">Nombre del Estudiante</th>
+                                                    <th style="width: 25%; text-align: right;">Acción</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php if (empty($alumnos_este_curso)): ?>
+                                                    <tr>
+                                                        <td colspan="2" style="text-align: center; color: #999; padding: 15px;">No hay alumnos asignados a esta división.</td>
+                                                    </tr>
+                                                <?php else: ?>
+                                                    <?php foreach ($alumnos_este_curso as $alumno_item): ?>
+                                                        <tr>
+                                                            <td>👤 <strong><?php echo htmlspecialchars($alumno_item); ?></strong></td>
+                                                            <td style="text-align: right;">
+                                                                <form action="procesos/procesar_asignacion_alumno.php" method="POST" style="margin: 0;" onsubmit="return confirm('¿Seguro que querés remover a este alumno de este curso?');">
+                                                                    <input type="hidden" name="accion" value="quitar">
+                                                                    <input type="hidden" name="curso_clave" value="<?php echo $clave_c; ?>">
+                                                                    <input type="hidden" name="alumno_nombre" value="<?php echo htmlspecialchars($alumno_item); ?>">
+                                                                    <button type="submit" class="btn-accion" style="color: var(--naranja); border-color: var(--naranja); padding: 4px 10px; font-size: 0.8rem; background: white; font-weight: bold;">❌ Quitar</button>
+                                                                </form>
+                                                            </td>
+                                                        </tr>
+                                                    <?php endforeach; ?>
+                                                <?php endif; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </details>
+                                <?php
+                            }
+                        }
+                    }
+
+                    renderizarAsignacionAlumnos($cursos_prim, $divisiones, 'Primario', $alumnos_por_curso, $alumnos_totales_sistema);
+                    renderizarAsignacionAlumnos($cursos_sec, $divisiones, 'Secundario', $alumnos_por_curso, $alumnos_totales_sistema);
+                    ?>
+                </div>
+            </div>
+        </section>
 
         <section id="vista-calificaciones" class="vista-panel">
             <header class="top-bar">
@@ -1866,7 +2055,31 @@ if (file_exists($archivo_cap)) {
                         <div class="user-avatar"><?php echo $iniciales; ?></div>
                     </div>
                 </div>
-            </header>
+            </header><?php if (!empty($todas_las_recuperaciones)): ?>
+            <div class="stat-card" style="border-left-color: var(--naranja); background-color: #fff5f2; margin-bottom: 25px; grid-column: 1 / -1;">
+                <h3 style="color: var(--naranja); margin-top: 0;">⚠️ Solicitudes de Blanqueo de Clave</h3>
+                <p style="font-size: 0.9rem; color: #555;">Los siguientes usuarios olvidaron su contraseña. Al aprobar la solicitud, su nueva clave pasará a ser automáticamente <strong>123</strong>.</p>
+                <div style="overflow-x: auto; margin-top: 15px;">
+                    <table class="tabla-datos" style="background: white; border-radius: 8px; border: 1px solid #f5c6cb;">
+                        <thead><tr><th>Usuario Afectado</th><th>Fecha de Solicitud</th><th style="text-align: right;">Acción Requerida</th></tr></thead>
+                        <tbody>
+                            <?php foreach (array_reverse($todas_las_recuperaciones) as $rec): ?>
+                                <tr>
+                                    <td><strong><?php echo htmlspecialchars($rec['usuario']); ?></strong></td>
+                                    <td><span class="badge badge-pendiente"><?php echo $rec['fecha']; ?></span></td>
+                                    <td style="text-align: right;">
+                                        <form action="procesos/blanquear_clave.php" method="POST" onsubmit="return confirm('¿Confirmás el blanqueo de clave a 123 para este usuario?');" style="margin:0;">
+                                            <input type="hidden" name="usuario_blanquear" value="<?php echo htmlspecialchars($rec['usuario']); ?>">
+                                            <button type="submit" class="btn-nuevo" style="background-color: var(--naranja); padding: 8px 15px; font-size: 0.85rem;">🔄 Restablecer a 123</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <?php
             // --- CEREBRO CLASIFICADOR DE USUARIOS ---
@@ -1946,10 +2159,18 @@ if (file_exists($archivo_cap)) {
                                                         <tr>
                                                             <td><strong><?php echo htmlspecialchars($alu['nombre']); ?></strong></td>
                                                             <td><code><?php echo htmlspecialchars($alu['usuario']); ?></code></td>
-                                                            <td><code><?php echo htmlspecialchars($alu['password']); ?></code></td>
+                                                            <td><code style="color: #999;">********</code></td>
                                                             <td style="text-align:right;">
                                                                 <div class="acciones-celda" style="justify-content: flex-end;">
-                                                                    <button type="button" class="btn-accion btn-editar-usuario" data-nombre="<?php echo htmlspecialchars($alu['nombre']); ?>" data-usuario="<?php echo htmlspecialchars($alu['usuario']); ?>" data-password="<?php echo htmlspecialchars($alu['password']); ?>">✏️ Modificar</button>
+                                                                    <button type="button" class="btn-accion btn-ver-ficha" 
+                                                                        data-nombre="<?php echo htmlspecialchars($alu['nombre']); ?>"
+                                                                        data-dni="<?php echo htmlspecialchars($alu['dni'] ?? 'No cargado'); ?>"
+                                                                        data-fnac="<?php echo htmlspecialchars($alu['fecha_nacimiento'] ?? 'No cargado'); ?>"
+                                                                        data-tnombre="<?php echo htmlspecialchars($alu['tutor_nombre'] ?? 'No cargado'); ?>"
+                                                                        data-ttel="<?php echo htmlspecialchars($alu['tutor_telefono'] ?? 'No cargado'); ?>"
+                                                                        data-temail="<?php echo htmlspecialchars($alu['tutor_email'] ?? 'No cargado'); ?>"
+                                                                    >👁️ Ficha</button>
+                                                                    <button type="button" class="btn-accion btn-editar-usuario" data-nombre="<?php echo htmlspecialchars($alu['nombre']); ?>" data-usuario="<?php echo htmlspecialchars($alu['usuario']); ?>" data-password="••••••••">✏️ Modificar</button>
                                                                     <form action="procesos/eliminar_usuario.php" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar a este alumno? Esto limpiará sus accesos.');" style="margin:0;">
                                                                         <input type="hidden" name="usuario_id" value="<?php echo htmlspecialchars($alu['usuario']); ?>">
                                                                         <button type="submit" class="btn-accion" style="color:var(--naranja); border-color:var(--naranja);">🗑️ Borrar</button>
@@ -2351,14 +2572,34 @@ if (file_exists($archivo_cap)) {
                     }
                     ?>
                     
+                   <?php
+                    // Contamos las faltas justificadas (certificados médicos aprobados)
+                    $cant_justificadas = 0;
+                    if (isset($mis_documentos['Certificado Médico / Justificación de Falta'])) {
+                        foreach ($mis_documentos['Certificado Médico / Justificación de Falta'] as $doc) {
+                            if (($doc['estado'] ?? 'pendiente') === 'aprobado') {
+                                $cant_justificadas++;
+                            }
+                        }
+                    }
+                    ?>
+                    
+                    <div style="display: flex; gap: 20px; justify-content: center; margin-top: 15px;">
+                        <div style="text-align: center;">
+                            <h2 style="color: var(--naranja); font-size: 3rem; margin: 0;"><?php echo count($mis_faltas); ?></h2>
+                            <p style="color: #888; font-weight: bold; margin: 5px 0 20px 0;">Faltas Injustificadas</p>
+                        </div>
+                        <div style="border-left: 2px solid #eee; padding-left: 20px; text-align: center;">
+                            <h2 style="color: var(--verde); font-size: 3rem; margin: 0;"><?php echo $cant_justificadas; ?></h2>
+                            <p style="color: #888; font-weight: bold; margin: 5px 0 20px 0;">Faltas Justificadas</p>
+                        </div>
+                    </div>
+
                     <?php if (empty($mis_faltas)): ?>
-                        <div style="background: #e6f6ec; padding: 20px; border-radius: 8px; text-align: center; color: var(--verde); font-weight: bold; margin-top: 15px;">
-                            ✅ ¡Excelente! Tenés asistencia perfecta. No registrás inasistencias.
+                        <div style="background: #e6f6ec; padding: 20px; border-radius: 8px; text-align: center; color: var(--verde); font-weight: bold;">
+                            ✅ ¡Excelente! Tenés asistencia perfecta (sin contar tus faltas justificadas por salud).
                         </div>
                     <?php else: ?>
-                        <h2 style="color: var(--naranja); text-align: center; font-size: 3rem; margin: 10px 0;"><?php echo count($mis_faltas); ?></h2>
-                        <p style="text-align: center; color: #888; font-weight: bold; margin-bottom: 20px;">Inasistencias Totales</p>
-                        
                         <table class="tabla-datos">
                             <thead><tr><th>Fecha de Ausencia</th><th>Curso Inscripto</th></tr></thead>
                             <tbody>
@@ -2439,16 +2680,43 @@ if (file_exists($archivo_cap)) {
                                     <table class="tabla-datos" style="margin-bottom: 20px;">
                                         <thead>
                                             <tr>
-                                                <th style="width: 80%;">Alumno</th>
-                                                <th style="text-align: center;">¿Ausente?</th>
+                                                <th style="width: 70%;">Alumno</th>
+                                                <th style="text-align: center;">Estado / Asistencia</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php foreach ($lista_alumnos as $al): ?>
-                                            <tr>
-                                                <td style="font-weight: 500;">👤 <?php echo htmlspecialchars($al); ?></td>
+                                            <?php foreach ($lista_alumnos as $al): 
+                                                $al_limpio = trim($al);
+                                                $tiene_certificado_hoy = false;
+                                                
+                                                if (isset($todos_los_documentos[$al_limpio]['Certificado Médico / Justificación de Falta'])) {
+                                                    foreach ($todos_los_documentos[$al_limpio]['Certificado Médico / Justificación de Falta'] as $cert) {
+                                                        $fecha_cert = explode(' ', $cert['fecha'])[0]; 
+                                                        $estado_cert = $cert['estado'] ?? 'pendiente';
+                                                        
+                                                        // MAGIA: Solo bloquea la falta si el estado es 'aprobado'
+                                                        if ($fecha_cert === $fecha_hoy && $estado_cert === 'aprobado') {
+                                                            $tiene_certificado_hoy = true;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                            ?>
+                                            <tr style="<?php echo $tiene_certificado_hoy ? 'background-color: #f0fdf4;' : ''; ?>">
+                                                <td style="font-weight: 500; <?php echo $tiene_certificado_hoy ? 'color: #155724;' : ''; ?>">
+                                                    👤 <?php echo htmlspecialchars($al); ?>
+                                                </td>
                                                 <td style="text-align: center;">
-                                                    <input type="checkbox" name="ausentes[]" value="<?php echo htmlspecialchars(trim($al)); ?>" style="transform: scale(1.5); cursor: pointer;">
+                                                    <?php if ($tiene_certificado_hoy): ?>
+                                                        <span class="badge badge-aprobado" style="font-size: 0.8rem; border: 1px solid #c3e6cb;">
+                                                            🩺 Falta Justificada
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <label style="cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                                                            <input type="checkbox" name="ausentes[]" value="<?php echo htmlspecialchars($al_limpio); ?>" style="transform: scale(1.5); cursor: pointer; margin: 0;">
+                                                            <span style="font-size: 0.85rem; color: #666;">Ausente</span>
+                                                        </label>
+                                                    <?php endif; ?>
                                                 </td>
                                             </tr>
                                             <?php endforeach; ?>
@@ -2526,11 +2794,29 @@ if (file_exists($archivo_cap)) {
                                             if (is_array($datos) && !isset($datos['archivo'])) {
                                                 // Listas infinitas (Permisos / Certificados Médicos)
                                                 foreach ($datos as $idx => $infinito) {
-                                                    // Validamos que el archivo exista en XAMPP antes de mostrar el botón
                                                     if (file_exists($infinito['archivo'])) {
                                                         $hay_archivos = true;
                                                         $color = ($tipo_doc === 'Permiso de Retiro') ? 'var(--celeste)' : 'var(--naranja)';
-                                                        echo '<a href="'.htmlspecialchars($infinito['archivo']).'" target="_blank" class="btn-accion" style="text-decoration: none; border-color: '.$color.'; color: '.$color.';">📎 '.$tipo_doc.' ('.explode(' ', $infinito['fecha'])[0].')</a>';
+                                                        $estado_actual = $infinito['estado'] ?? 'pendiente';
+                                                        
+                                                        echo '<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px; background: white; padding: 8px; border-radius: 6px; border: 1px solid #eee;">';
+                                                        echo '<a href="'.htmlspecialchars($infinito['archivo']).'" target="_blank" class="btn-accion" style="text-decoration: none; border-color: '.$color.'; color: '.$color.'; font-size: 0.85rem;">📎 '.$tipo_doc.' ('.explode(' ', $infinito['fecha'])[0].')</a>';
+                                                        
+                                                        // Sistema interactivo de Aprobación
+                                                        if ($estado_actual === 'pendiente') {
+                                                            echo '<form action="procesos/procesar_estado_certificado.php" method="POST" style="margin: 0; display: flex; gap: 5px;">';
+                                                            echo '<input type="hidden" name="alumno" value="'.htmlspecialchars($alum_nombre).'">';
+                                                            echo '<input type="hidden" name="tipo_doc" value="'.htmlspecialchars($tipo_doc).'">';
+                                                            echo '<input type="hidden" name="indice" value="'.$idx.'">';
+                                                            echo '<button type="submit" name="accion" value="aprobar" class="btn-accion" style="border-color: var(--verde); color: var(--verde); padding: 3px 8px; font-size: 0.8rem;" title="Aprobar Certificado">✅</button>';
+                                                            echo '<button type="submit" name="accion" value="rechazar" class="btn-accion" style="border-color: var(--naranja); color: var(--naranja); padding: 3px 8px; font-size: 0.8rem;" title="Rechazar Certificado">❌</button>';
+                                                            echo '</form>';
+                                                        } elseif ($estado_actual === 'aprobado') {
+                                                            echo '<span class="badge badge-aprobado" style="font-size: 0.75rem;">Aprobado</span>';
+                                                        } else {
+                                                            echo '<span class="badge" style="background: #fce8e6; color: var(--naranja); font-size: 0.75rem;">Rechazado</span>';
+                                                        }
+                                                        echo '</div>';
                                                     }
                                                 }
                                             } elseif (isset($datos['archivo'])) {
@@ -2560,6 +2846,81 @@ if (file_exists($archivo_cap)) {
                     });
                 });
             </script>
+        </section>
+        <?php endif; ?>
+
+        <?php if ($es_admin): ?>
+        <section id="vista-entrevistas" class="vista-panel">
+            <header class="top-bar" style="flex-direction: column; align-items: stretch; gap: 15px;">
+                
+                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'entrevista_agendada'): ?>
+                    <div style="background: #e6f6ec; color: var(--verde); padding: 12px; border-radius: 8px; font-weight: bold;">
+                        ✅ Entrevista agendada correctamente. <br>
+                        <span style="font-size: 0.85rem; color: #155724; font-weight: normal;">📧 (Simulación de Sistema) Se ha enviado un correo automático al tutor con los detalles de la cita.</span>
+                    </div>
+                <?php endif; ?>
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="user-welcome">
+                        <h1>Entrevistas de Admisión</h1>
+                        <p style="color: #666;">Gestión de solicitudes de ingreso y coordinación de reuniones con padres.</p>
+                    </div>
+                    <div class="user-profile">
+                        <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
+                        <div class="user-avatar"><?php echo $iniciales; ?></div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-grid">
+                <?php if (empty($todas_las_entrevistas)): ?>
+                    <div class="stat-card" style="grid-column: 1 / -1;">
+                        <p style="text-align: center; color: #888;">No hay solicitudes de entrevistas pendientes.</p>
+                    </div>
+                <?php else: ?>
+                    <?php foreach (array_reverse($todas_las_entrevistas) as $ent): 
+                        $es_pendiente = ($ent['estado'] === 'pendiente');
+                        $color_borde = $es_pendiente ? 'var(--naranja)' : 'var(--verde)';
+                    ?>
+                        <div class="stat-card" style="border-left-color: <?php echo $color_borde; ?>;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                                <h3 style="margin: 0;">Familia <?php echo htmlspecialchars(explode(' ', $ent['tutor'])[1] ?? $ent['tutor']); ?></h3>
+                                <?php if ($es_pendiente): ?>
+                                    <span class="badge badge-pendiente">Pendiente</span>
+                                <?php else: ?>
+                                    <span class="badge badge-aprobado">Agendada</span>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <p style="color: #666; font-size: 0.9rem; margin: 5px 0;"><strong>🧒 Interesado/a:</strong> <?php echo htmlspecialchars($ent['alumno']); ?> (<?php echo htmlspecialchars($ent['nivel']); ?>)</p>
+                            <p style="color: #666; font-size: 0.9rem; margin: 5px 0;"><strong>📞 Contacto:</strong> <?php echo htmlspecialchars($ent['telefono']); ?> | ✉️ <?php echo htmlspecialchars($ent['email']); ?></p>
+                            
+                            <hr style="border: 0; border-top: 1px dashed #ddd; margin: 15px 0;">
+                            
+                            <?php if ($es_pendiente): ?>
+                                <p style="font-size: 0.85rem; color: var(--azul-primario); font-weight: bold; margin-bottom: 10px;">🕒 Preferencia del Tutor: <?php echo htmlspecialchars($ent['disponibilidad']); ?></p>
+                                
+                                <form action="procesos/gestionar_entrevista.php" method="POST" style="background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+                                    <input type="hidden" name="id_entrevista" value="<?php echo htmlspecialchars($ent['id']); ?>">
+                                    <label style="font-size: 0.85rem; font-weight: bold; color: #555;">Fijar Fecha y Hora:</label>
+                                    <div style="display: flex; gap: 10px; margin-top: 5px; margin-bottom: 15px;">
+                                        <input type="date" name="fecha" required style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
+                                        <input type="time" name="hora" required style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
+                                    </div>
+                                    <button type="submit" class="btn-nuevo" style="width: 100%; background-color: var(--verde); font-size: 0.9rem;">✅ Agendar y Notificar</button>
+                                </form>
+                            <?php else: ?>
+                                <div style="background: #e6f6ec; padding: 15px; border-radius: 8px; border: 1px solid #c3e6cb; text-align: center;">
+                                    <p style="margin: 0; color: #155724; font-weight: bold; font-size: 0.9rem;">Reunión Coordinada para el:</p>
+                                    <h2 style="margin: 5px 0; color: var(--verde);"><?php echo date('d/m/Y', strtotime($ent['fecha_agendada'])); ?> a las <?php echo htmlspecialchars($ent['hora_agendada']); ?>hs</h2>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <p style="font-size: 0.75rem; color: #aaa; text-align: right; margin-top: 10px;">Recibido el: <?php echo $ent['fecha_solicitud']; ?></p>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
         </section>
         <?php endif; ?>
 
@@ -2744,8 +3105,18 @@ if (file_exists($archivo_cap)) {
 
                     <div id="campos-alumno" style="grid-column: 1 / -1; display: none; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div class="input-group" style="grid-column: 1 / -1; margin-top: 10px; border-top: 1px dashed #eee; padding-top: 15px;">
-                            <strong style="color: var(--verde); font-size: 0.9rem;">Asignación de Curso (Solo Perfil Alumno)</strong>
+                            <strong style="color: var(--verde); font-size: 0.9rem;">Datos Personales y Curso (Solo Perfil Alumno)</strong>
                         </div>
+                        
+                        <div class="input-group">
+                            <label>DNI del Alumno</label>
+                            <input type="text" name="dni" placeholder="Ej: 45123456" pattern="[0-9]*">
+                        </div>
+                        <div class="input-group">
+                            <label>Fecha de Nacimiento</label>
+                            <input type="date" name="fecha_nacimiento" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
+                        </div>
+                        
                         <div class="input-group">
                             <label>Año / Grado</label>
                             <select name="curso_asig_al" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
@@ -2770,6 +3141,22 @@ if (file_exists($archivo_cap)) {
                                 <option value="B">B</option>
                                 <option value="C">C</option>
                             </select>
+                        </div>
+
+                        <div class="input-group" style="grid-column: 1 / -1; margin-top: 10px; border-top: 1px dashed #eee; padding-top: 15px;">
+                            <strong style="color: var(--naranja); font-size: 0.9rem;">Información del Tutor / Contacto de Emergencia</strong>
+                        </div>
+                        <div class="input-group" style="grid-column: 1 / -1;">
+                            <label>Nombre Completo del Tutor/a</label>
+                            <input type="text" name="tutor_nombre" placeholder="Ej: María González">
+                        </div>
+                        <div class="input-group">
+                            <label>Teléfono / WhatsApp</label>
+                            <input type="tel" name="tutor_telefono" placeholder="+54 362...">
+                        </div>
+                        <div class="input-group">
+                            <label>Correo Electrónico</label>
+                            <input type="email" name="tutor_email" placeholder="correo@ejemplo.com">
                         </div>
                     </div>
 
@@ -2903,20 +3290,110 @@ if (file_exists($archivo_cap)) {
             </form>
         </div>
     </div>
-    <?php endif; ?>
+    <?php endif; ?> <div class="modal-overlay" id="modal-cambiar-clave">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Actualizar Mi Contraseña</h2>
+                <button type="button" class="btn-cerrar-modal" id="btn-cerrar-cambiar-clave">×</button>
+            </div>
+            <form action="procesos/cambiar_mi_clave.php" method="POST" class="form-dashboard" onsubmit="return validarContrasenasNueva()">
+                <div class="form-grid">
+                    <div class="input-group" style="grid-column: 1 / -1;">
+                        <label>Contraseña Actual</label>
+                        <input type="password" name="password_actual" required placeholder="Escribí tu clave actual">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Nueva Contraseña</label>
+                        <input type="password" name="password_nueva" id="nueva-clave-input" required placeholder="Mínimo 4 caracteres">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Confirmar Nueva Contraseña</label>
+                        <input type="password" id="confirmar-clave-input" required placeholder="Repetí la nueva clave">
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancelar" id="btn-cancelar-cambiar-clave">Cancelar</button>
+                    <button type="submit" class="btn-guardar" style="background-color: var(--azul-primario);">Actualizar Contraseña</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="modal-overlay" id="modal-ficha-alumno">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Ficha Estudiantil</h2>
+                <button type="button" class="btn-cerrar-modal" onclick="document.getElementById('modal-ficha-alumno').classList.remove('modal-activo');">×</button>
+            </div>
+            <div style="padding: 25px;">
+                <h3 id="ficha-nombre" style="color: var(--azul-primario); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">Nombre</h3>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                    <div>
+                        <p style="color: #777; font-size: 0.85rem; margin: 0 0 5px 0;">DNI del Alumno:</p>
+                        <p style="margin: 0; font-weight: bold; font-size: 1.1rem;" id="ficha-dni"></p>
+                    </div>
+                    <div>
+                        <p style="color: #777; font-size: 0.85rem; margin: 0 0 5px 0;">Fecha de Nacimiento:</p>
+                        <p style="margin: 0; font-weight: bold; font-size: 1.1rem;" id="ficha-fnac"></p>
+                    </div>
+                </div>
+
+                <div style="background: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-top: 25px;">
+                    <h4 style="color: var(--naranja); margin: 0 0 15px 0;">📞 Contacto del Tutor / Emergencia</h4>
+                    <p style="margin: 5px 0;"><strong>Nombre:</strong> <span id="ficha-tnombre"></span></p>
+                    <p style="margin: 5px 0;"><strong>Teléfono:</strong> <span id="ficha-ttel"></span></p>
+                    <p style="margin: 5px 0;"><strong>Email:</strong> <span id="ficha-temail"></span></p>
+                </div>
+            </div>
+            <div class="modal-footer" style="background: #f4f7f6; padding: 15px 25px;">
+                <button type="button" class="btn-cancelar" onclick="document.getElementById('modal-ficha-alumno').classList.remove('modal-activo');">Cerrar Ficha</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
-        //  MOTOR DEL MENÚ LATERAL 
+       //  MOTOR DEL MENÚ LATERAL (CON INTELIGENCIA MÓVIL) 
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const logoText = document.getElementById('logo-text');
-            sidebar.classList.toggle('collapsed');
             
-            if(sidebar && sidebar.classList.contains('collapsed')) {
-                if(logoText) logoText.style.visibility = 'hidden';
-            } else {
-                if(logoText) logoText.style.visibility = 'visible';
+            // ¿Estamos en un celular? (Pantalla menor a 768px)
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('mobile-active');
+            } 
+            // ¿Estamos en una computadora?
+            else {
+                sidebar.classList.toggle('collapsed');
+                if(sidebar && sidebar.classList.contains('collapsed')) {
+                    if(logoText) logoText.style.visibility = 'hidden';
+                } else {
+                    if(logoText) logoText.style.visibility = 'visible';
+                }
             }
         }
+
+        // MAGIA EXTRA: Si estamos en el celular y tocamos en la zona gris (fuera del menú), se cierra solo
+        document.addEventListener('click', (e) => {
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth <= 768 && sidebar.classList.contains('mobile-active')) {
+                // Si el clic NO fue adentro del menú lateral y TAMPOCO fue en el botón hamburguesa
+                if (!sidebar.contains(e.target) && !e.target.closest('.mobile-top-bar') && !e.target.closest('.menu-toggle')) {
+                    sidebar.classList.remove('mobile-active');
+                }
+            }
+        });
+        
+        // Cierra el menú móvil automáticamente cuando tocás una sección
+        document.querySelectorAll('.nav-item').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    document.getElementById('sidebar').classList.remove('mobile-active');
+                }
+            });
+        });
 
         //  MOTOR DEL MODAL DE TALLERES (PROTEGIDO) 
         const btnAbrirTaller = document.getElementById('btn-abrir-talleres'); 
@@ -3344,6 +3821,67 @@ if (file_exists($archivo_cap)) {
                 document.getElementById('input-correccion-alumno').value = btn.getAttribute('data-alumno');
                 document.getElementById('input-correccion-materia').value = btn.getAttribute('data-materia');
                 document.getElementById('modal-corregir-profe').classList.add('modal-activo');
+            });
+        });
+
+        // --- MOTOR DEL MODAL DE CAMBIAR CONTRASEÑA PROPIA ---
+        const btnAbrirCambiarClave = document.getElementById('btn-abrir-cambiar-clave');
+        const modalCambiarClave = document.getElementById('modal-cambiar-clave');
+        const btnCerrarCambiarClave = document.getElementById('btn-cerrar-cambiar-clave');
+        const btnCancelarCambiarClave = document.getElementById('btn-cancelar-cambiar-clave');
+
+        if (btnAbrirCambiarClave && modalCambiarClave) {
+            btnAbrirCambiarClave.addEventListener('click', (e) => {
+                e.preventDefault();
+                modalCambiarClave.classList.add('modal-activo');
+            });
+        }
+
+        function cerrarModalCambiarClave() {
+            if (modalCambiarClave) modalCambiarClave.classList.remove('modal-activo');
+        }
+
+        if (btnCerrarCambiarClave) btnCerrarCambiarClave.addEventListener('click', cerrarModalCambiarClave);
+        if (btnCancelarCambiarClave) btnCancelarCambiarClave.addEventListener('click', cerrarModalCambiarClave);
+        if (modalCambiarClave) {
+            modalCambiarClave.addEventListener('click', (e) => {
+                if (e.target === modalCambiarClave) cerrarModalCambiarClave();
+            });
+        }
+
+        function validarContrasenasNueva() {
+            const nueva = document.getElementById('nueva-clave-input').value;
+            const confirma = document.getElementById('confirmar-clave-input').value;
+            if (nueva.length < 4) {
+                alert('La nueva contraseña debe tener al menos 4 caracteres.');
+                return false;
+            }
+            if (nueva !== confirma) {
+                alert('La nueva contraseña y la confirmación no coinciden.');
+                return false;
+            }
+            return true;
+        }
+
+        // --- MOTOR DEL MODAL DE FICHA DE ALUMNOS ---
+        document.querySelectorAll('.btn-ver-ficha').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('ficha-nombre').innerText = "🎒 " + btn.getAttribute('data-nombre');
+                document.getElementById('ficha-dni').innerText = btn.getAttribute('data-dni');
+                
+                // Le damos formato Argentino a la fecha (DD/MM/YYYY)
+                let fnac = btn.getAttribute('data-fnac');
+                if (fnac && fnac !== 'No cargado') {
+                    let partes = fnac.split('-');
+                    if (partes.length === 3) fnac = partes[2] + '/' + partes[1] + '/' + partes[0];
+                }
+                document.getElementById('ficha-fnac').innerText = fnac || 'No cargado';
+                
+                document.getElementById('ficha-tnombre').innerText = btn.getAttribute('data-tnombre') || 'No cargado';
+                document.getElementById('ficha-ttel').innerText = btn.getAttribute('data-ttel') || 'No cargado';
+                document.getElementById('ficha-temail').innerText = btn.getAttribute('data-temail') || 'No cargado';
+                
+                document.getElementById('modal-ficha-alumno').classList.add('modal-activo');
             });
         });
     </script>

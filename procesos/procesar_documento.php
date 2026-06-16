@@ -1,6 +1,7 @@
 <?php
 session_start();
 
+date_default_timezone_set('America/Argentina/Buenos_Aires');
 if (!isset($_SESSION['usuario'])) {
     header('Location: ../login.php');
     exit;
@@ -24,30 +25,32 @@ if ($rol_actual === 'tutor') {
     }
 }
 
+$estado_subida = ''; // Variable que guarda el resultado para mostrar el cartel
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_doc']) && !empty($nombre_alumno)) {
     $tipo_doc = $_POST['tipo_doc'] ?? 'Documento';
     
-    // --- ESCUDO DE SEGURIDAD (PARCHE) ---
     $archivo_tmp = $_FILES['archivo_doc']['tmp_name'];
     $nombre_original = $_FILES['archivo_doc']['name'];
     $error_carga = $_FILES['archivo_doc']['error'];
 
-    // 1. Verificamos que no haya errores de carga por límite de peso
-    if ($error_carga === UPLOAD_ERR_OK) {
+    // 1. Verificamos si XAMPP bloqueó el archivo por pesar más de 2 MB
+    if ($error_carga === UPLOAD_ERR_INI_SIZE || $error_carga === UPLOAD_ERR_FORM_SIZE) {
+        $estado_subida = 'error_peso';
+    } 
+    // 2. Si no hubo errores de peso, procedemos al análisis de seguridad
+    elseif ($error_carga === UPLOAD_ERR_OK) {
         
-        // 2. Leemos el ADN real del archivo (MIME Type)
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime_real = finfo_file($finfo, $archivo_tmp);
         finfo_close($finfo);
 
-        // 3. Extraemos la extensión del nombre
         $extension = strtolower(pathinfo($nombre_original, PATHINFO_EXTENSION));
 
-        // 4. Listas blancas (Lo único que aceptamos)
-        $mimes_permitidos = ['application/pdf', 'image/jpeg', 'image/png'];
+        // Agregamos 'application/x-pdf' por si tu navegador manda el PDF con un formato alternativo
+        $mimes_permitidos = ['application/pdf', 'application/x-pdf', 'image/jpeg', 'image/png'];
         $extensiones_permitidas = ['pdf', 'jpg', 'jpeg', 'png'];
 
-        // Si es un archivo falso o no permitido, frenamos todo
         if (in_array($mime_real, $mimes_permitidos) && in_array($extension, $extensiones_permitidas)) {
             
             $directorio_subidas_fisico = __DIR__ . '/../uploads/';
@@ -69,7 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_doc']) && !e
                     }
                     $docs[$nombre_alumno][$tipo_doc][] = [
                         'fecha' => date('d-m-Y H:i'),
-                        'archivo' => $ruta_web
+                        'archivo' => $ruta_web,
+                        'estado' => 'pendiente' // PARCHE LOGICO: Nace pendiente de revisión
                     ];
                 } else {
                     $docs[$nombre_alumno][$tipo_doc] = [
@@ -78,14 +82,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_doc']) && !e
                     ];
                 }
                 file_put_contents($archivo_docs, json_encode($docs, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                
+                $estado_subida = 'exito'; // Todo salió perfecto
+            } else {
+                $estado_subida = 'error_mover';
             }
+        } else {
+            $estado_subida = 'error_seguridad'; // Es un archivo disfrazado
         }
+    } else {
+        $estado_subida = 'error_peso'; // Error general de servidor
     }
 }
 
+// Redirección inteligente que avisa qué cartel mostrar
 $url_retorno = '../dashboard.php?vista=vista-documentacion';
 if ($rol_actual === 'tutor' && !empty($nombre_alumno)) {
     $url_retorno .= '&hijo=' . urlencode($nombre_alumno);
+}
+if ($estado_subida !== '') {
+    $url_retorno .= '&subida=' . $estado_subida;
 }
 header('Location: ' . $url_retorno);
 exit;

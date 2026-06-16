@@ -27,7 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Recorremos la lista del JSON buscando coincidencia
     foreach ($usuarios_permitidos as $u) {
-        if (strtolower($usuario_ingresado) === strtolower($u['usuario']) && $password_ingresada === $u['password']) {
+        // Usamos password_verify para comparar el texto que escribió el usuario con el hash guardado
+        if (strtolower($usuario_ingresado) === strtolower($u['usuario']) && password_verify($password_ingresada, $u['password'])) {
             // Guardamos el nombre oficial y el rol en la sesión
             $_SESSION['usuario'] = $u['nombre'];
             $_SESSION['rol'] = $u['rol']; // Guardamos el rol para futuras validaciones de seguridad
@@ -148,6 +149,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <input type="password" name="password" placeholder="Contraseña" required>
             <button type="submit" class="btn-entrar">INGRESAR</button>
         </form>
+
+        <div style="text-align: center; margin-top: 15px;">
+            <a href="#" id="link-olvido" style="color: var(--azul-primario); text-decoration: none; font-size: 0.9rem;">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <div id="caja-recuperacion" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed #ccc;">
+            <p style="font-size: 0.9rem; color: #555; text-align: center; margin-bottom: 15px;">Ingresá tu nombre de usuario y solicitaremos el blanqueo a Preceptoría/Administración.</p>
+            <form action="procesos/procesar_recuperacion.php" method="POST">
+                <input type="text" name="usuario_recuperar" placeholder="Tu usuario (ej: gmongelo)" required style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;">
+                <button type="submit" style="width: 100%; padding: 10px; background-color: #f15a24; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Solicitar Blanqueo</button>
+            </form>
+        </div>
+
+        <?php if (isset($_GET['msj']) && $_GET['msj'] === 'recuperacion_enviada'): ?>
+            <div style="background: #e6f6ec; color: #155724; padding: 10px; border-radius: 5px; text-align: center; font-size: 0.9rem; margin-top: 15px; font-weight: bold;">
+                ✅ Solicitud enviada a la administración.
+            </div>
+        <?php endif; ?>
+
+        <script>
+            document.getElementById('link-olvido').addEventListener('click', function(e) {
+                e.preventDefault();
+                const caja = document.getElementById('caja-recuperacion');
+                caja.style.display = caja.style.display === 'none' ? 'block' : 'none';
+            });
+        </script>
+
     </div>
 </body>
 </html>

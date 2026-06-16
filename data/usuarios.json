@@ -1,272 +1,272 @@
 [
     {
         "usuario": "jumanji",
-        "password": "123",
+        "password": "$2y$10$xQpr6Ek1Ig2wzXcqlhq7XOPAJBJTHLi8qxAdPIRJyWGI23K.YczFO",
         "rol": "alumno",
         "nombre": "Jumanji Nilo"
     },
     {
         "usuario": "admin",
-        "password": "admin",
+        "password": "$2y$10$YBpG2cn6LueiRIi0Vn7MuOY5Ir.UmpB4p7slcxqNR31HVhkijKCnO",
         "rol": "admin",
         "nombre": "Admin"
     },
     {
         "usuario": "profesor",
-        "password": "admin",
+        "password": "$2y$10$zwrUVSa2rJCEWfQb4dFYWOwBJ9KjPLK9CaNgc53PqCotJDWqEyvo.",
         "rol": "profesor",
         "nombre": "Profesor"
     },
     {
         "usuario": "seno1",
-        "password": "123",
+        "password": "$2y$10$L1ZRMx3nF24Wv.WJRt85seAjMlmRHGhRfGbHDh0lphI8FPO9FGIhi",
         "rol": "profesor",
         "nombre": "Seño 1er Grado"
     },
     {
         "usuario": "seno2",
-        "password": "123",
+        "password": "$2y$10$PVJb8sPrWxjHI8UJziPbvu5DmgH\/3t3BivsZsPGQe50oGvRHiF7ui",
         "rol": "profesor",
         "nombre": "Seño 2do Grado"
     },
     {
         "usuario": "profe3",
-        "password": "123",
+        "password": "$2y$10$C77hmaFybeQYppnwToNo0.1q9RmwXJjJublUTYghKCTnaW5QIbqe.",
         "rol": "profesor",
         "nombre": "Profe 3er Grado"
     },
     {
         "usuario": "seno4",
-        "password": "123",
+        "password": "$2y$10$lMHOE3op0Ptorww2p0\/IkeqEa.fhRnfd09Sd5tOY8CAU8O.1N6toS",
         "rol": "profesor",
         "nombre": "Seño 4to Grado"
     },
     {
         "usuario": "profe5",
-        "password": "123",
+        "password": "$2y$10$FhMukOT3Bmg\/zQ07sOVMQukZs5LqgA0mrz6me0KbjerUJzxU\/Mnbe",
         "rol": "profesor",
         "nombre": "Profe 5to Grado"
     },
     {
         "usuario": "seno6",
-        "password": "123",
+        "password": "$2y$10$OfouWaDKjjvZVn7eg3bkLODb9byKYDu7xjUQT8JXEoL8yy3WvvT5G",
         "rol": "profesor",
         "nombre": "Seño 6to Grado"
     },
     {
         "usuario": "profe7",
-        "password": "123",
+        "password": "$2y$10$lqhAM201NVy1xvtZVtXcku8kzTlTG8XsKULbuVndkCatHMj0f5n4O",
         "rol": "profesor",
         "nombre": "Profe 7mo Grado"
     },
     {
         "usuario": "profesec1",
-        "password": "123",
+        "password": "$2y$10$eTWt5ie4ZxS6Hg098X6aT.PX3w5b9T\/jXELyvesKpbcDUH8K1Cg3.",
         "rol": "profesor",
         "nombre": "Profe 1er Año"
     },
     {
         "usuario": "profesec2",
-        "password": "123",
+        "password": "$2y$10$UjlVpJdjErusX0ygBI1nhezigeTr3ib4VIfyZaRsI9wLDWXDhuFzC",
         "rol": "profesor",
         "nombre": "Profe 2do Año"
     },
     {
         "usuario": "profesec3",
-        "password": "123",
+        "password": "$2y$10$tcCBVjquv.x1QOCE807B2uWzcnx.pHadB.Caf1KUSDrzGJU.d2.KG",
         "rol": "profesor",
         "nombre": "Profe 3er Año"
     },
     {
         "usuario": "profesec4",
-        "password": "123",
+        "password": "$2y$10$CoY1LmYj5r.vVZtb.RNWmOBnps7fIr1b1PtIYGF\/EiNczFsc5Sm5G",
         "rol": "profesor",
         "nombre": "Profe 4to Año"
     },
     {
         "usuario": "profesec5",
-        "password": "123",
+        "password": "$2y$10$U3\/BGTqtFQOubOLq88R3outni6df2ME6Oi7C7A\/peG3crn8bBt5A2",
         "rol": "profesor",
         "nombre": "Profe 5to Año"
     },
     {
         "usuario": "alum1",
-        "password": "123",
+        "password": "$2y$10$p5yJGlMhJoTEkH9npw0PNuLpHGb94FBVo8dNy.4K0E8TBzqVedbCS",
         "rol": "alumno",
         "nombre": "Alumno Uno (1ro)"
     },
     {
         "usuario": "alum2",
-        "password": "123",
+        "password": "$2y$10$VNnVxF2QgtOP3gUjkpg1KOne0nn0AuzSF3u2eegL4e0aOWEe1PCa6",
         "rol": "alumno",
         "nombre": "Alumno Dos (2do)"
     },
     {
         "usuario": "alum3",
-        "password": "123",
+        "password": "$2y$10$pnt0ahe6lafRXz9m5\/6Z3eld2nHirn7PCCkmX.f8xMyPv6IFDnOAq",
         "rol": "alumno",
         "nombre": "Alumno Tres (3ro)"
     },
     {
         "usuario": "alum4",
-        "password": "123",
+        "password": "$2y$10$JqwOFoj80S5wHGT4.2IBvO7nucXJL0SWr9kP\/brTbqTtEbuosCkke",
         "rol": "alumno",
         "nombre": "Alumno Cuatro (4to)"
     },
     {
         "usuario": "alum5",
-        "password": "123",
+        "password": "$2y$10$9aGo.E4NcXqW.qTJOdcPq.iNKgIkJNZVqFx2dtsZbiQqJrWpv8x4S",
         "rol": "alumno",
         "nombre": "Alumno Cinco (5to)"
     },
     {
         "usuario": "alum6",
-        "password": "123",
+        "password": "$2y$10$mBrzkixM6uiaMeb9omoXnOLzOcBJYNBKM\/l0cPvAOB9LCbRlzEeOK",
         "rol": "alumno",
         "nombre": "Alumno Seis (6to)"
     },
     {
         "usuario": "alum7",
-        "password": "123",
+        "password": "$2y$10$rH1egc7cAOXSOVlOaY1h7uYwhcKLbcgprukMrcItoQ\/8wMJt1dRJK",
         "rol": "alumno",
         "nombre": "Alumno Siete (7mo)"
     },
     {
         "usuario": "alumsec1",
-        "password": "123",
+        "password": "$2y$10$zceD8n2Anqko5YAMgW2gxehgiTbgeM8VR2PyJskd9ERU34gXRTTny",
         "rol": "alumno",
         "nombre": "Alumno Secu (1ro)"
     },
     {
         "usuario": "alumsec2",
-        "password": "123",
+        "password": "$2y$10$zoQYLLQ1gyUkcf0N9Olbx.B0Drpi9eRufbpzGA\/A9bUmBihumUkUq",
         "rol": "alumno",
         "nombre": "Alumno Secu (2do)"
     },
     {
         "usuario": "alumsec3",
-        "password": "123",
+        "password": "$2y$10$Cq6N1O.aAVUib4m1bPLZruMDIrgib5sAqrSNffzSfflWkOXNECpsu",
         "rol": "alumno",
         "nombre": "Alumno Secu (3ro)"
     },
     {
         "usuario": "alumsec4",
-        "password": "123",
+        "password": "$2y$10$tH.E.VwR5F4ahyXkKNa0ROePt8srsg.sD1gIcQPI.bBmA0Z\/otehK",
         "rol": "alumno",
         "nombre": "Alumno Secu (4to)"
     },
     {
         "usuario": "alumsec5",
-        "password": "123",
+        "password": "$2y$10$.QQuCxqZXVlFJuAXrQq3gORWjvN6NJaofahDuvvH6r2AhuSblVH.K",
         "rol": "alumno",
         "nombre": "Alumno Secu (5to)"
     },
     {
         "usuario": "jgomez",
-        "password": "123",
+        "password": "$2y$10$zKcp1whKrDgVB0c8.HIQheOPyuYE1mm9ZOUTOBdrqURvgqv9jjFD.",
         "rol": "alumno",
         "nombre": "Javier Gomez"
     },
     {
         "usuario": "amongelo",
-        "password": "123",
+        "password": "$2y$10$NGDNJk7PFG\/Z4Lvg\/GwiPuMEMQFGBEgUNPyWIkL9jLXY6vP7Ju8vi",
         "rol": "alumno",
         "nombre": "Alexis Mongelo"
     },
     {
         "usuario": "jojeda",
-        "password": "123",
+        "password": "$2y$10$iAFKRQbtVDnusuhwA6eKEuGL3D3QTLLo5ggoRZYyt92pZthHHTVcC",
         "rol": "alumno",
         "nombre": "Jose Ojeda"
     },
     {
         "usuario": "crodriguez",
-        "password": "123",
+        "password": "$2y$10$tcDBCmFt6dyQCwNEjYv7AeGoh9\/yhk00y9zLr7PkL7mKKzDEA3aSi",
         "rol": "profesor",
         "nombre": "Carlos Rodríguez"
     },
     {
         "usuario": "amartinez",
-        "password": "123",
+        "password": "$2y$10$eWkZA9RPPHQW4HAk1XzdUuxgfNi\/NJ4Zm2\/Fn4rTUWuSJYvjbokz2",
         "rol": "profesor",
         "nombre": "Ana María Martínez"
     },
     {
         "usuario": "jclopez",
-        "password": "123",
+        "password": "$2y$10$gHl0rcFEFuJIDlLuXv63EemUds4WlrN2JWwBUaNJchFHQ\/7qBRNr2",
         "rol": "profesor",
         "nombre": "Juan Carlos López"
     },
     {
         "usuario": "pgomez",
-        "password": "123",
+        "password": "$2y$10$Dh1lVoyzCQIAlrKSh1M9ie3ErKAtFtqCa49Uu0ec.IqpzfKuuXgmW",
         "rol": "profesor",
         "nombre": "Patricia Gómez"
     },
     {
         "usuario": "lbenitez",
-        "password": "123",
+        "password": "$2y$10$F3dI3P79yu9aoXF2eUOGjeQep\/MyFujTFEzjZo2EIZ4AOJJbrsISC",
         "rol": "profesor",
         "nombre": "Laura Benítez"
     },
     {
         "usuario": "djuarez",
-        "password": "123",
+        "password": "$2y$10$2YIhLlJU7i94qwaKwYZasevBTKNk9iek328V9vJgvlU3q9TxGaVNm",
         "rol": "profesor",
         "nombre": "Diego Juárez"
     },
     {
         "usuario": "cfernandez",
-        "password": "123",
+        "password": "$2y$10$u5zsRL7I48bN9JK81PxV4.CTTy7.GN70IbS4OBNsQIA3.muC.U\/T6",
         "rol": "profesor",
         "nombre": "Claudia Fernández"
     },
     {
         "usuario": "jalmiron",
-        "password": "123",
+        "password": "$2y$10$q6SZLx59DUBNprtrqzT4G.\/sIq1QEeP.Y2NZp9.6.xk2HZOaTBojK",
         "rol": "profesor",
         "nombre": "Jorge Almirón"
     },
     {
         "usuario": "aortega",
-        "password": "123",
+        "password": "$2y$10$8oX7blfM0FJXiZ93NxMM9OLIxJ52MSVj\/2ncjduT8P7HjPBzrgV6K",
         "rol": "profesor",
         "nombre": "Ariel Ortega"
     },
     {
         "usuario": "msilva",
-        "password": "123",
+        "password": "$2y$10$lJCpE\/qqoia56J.CgZbvyONL96yvTFKjE1DR5qZ4MyVjFkJed03XW",
         "rol": "profesor",
         "nombre": "Marina Silva"
     },
     {
         "usuario": "erossi",
-        "password": "123",
+        "password": "$2y$10$3PIlnW2CYgNRyseTKLoUsOuzOTGCLHSp294wrJdzeYXovctjzQTGq",
         "rol": "profesor",
         "nombre": "Esteban Rossi"
     },
     {
         "usuario": "precep1",
-        "password": "123",
+        "password": "$2y$10$l\/byEW8EtsIbg47i7lWOneyCmj0E9NkXkjMQdULIleQgiAuHO4MJy",
         "rol": "preceptor",
         "nombre": "precep1"
     },
     {
         "nombre": "Gustavo Mongelo",
         "usuario": "gmongelo",
-        "password": "123",
+        "password": "$2y$10$U8LmVx6s6hiIeHe1NA3DL.upzMHlReyJ0bdt3R7Ahal6OrO2ALKUG",
         "rol": "tutor"
     },
     {
         "nombre": "Jimena Perez",
         "usuario": "jperez",
-        "password": "123",
+        "password": "$2y$10$yQCjtybH7hnBKbu3Evlzo.2.qWcOfWZaCwN2ie1P1HH3X6zv9hGmq",
         "rol": "profesor"
     },
     {
         "nombre": "Santiago Perez",
         "usuario": "sperez",
-        "password": "123",
+        "password": "$2y$10$Df2PG5ncB9JHeYg6kONM9.FWlSm2n\/Hvwzis45NcjD3AS51pEho\/6",
         "rol": "alumno"
     }
 ]

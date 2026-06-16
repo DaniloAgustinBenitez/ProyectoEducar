@@ -203,9 +203,33 @@ if ($es_alumno || $es_tutor) {
     }
 }
 
-// LÓGICA PARA ENTREVISTAS DE ADMISIÓN
+// LÓGICA PARA ENTREVISTAS DE ADMISIÓN (CON AUTOLIMPIEZA)
 $archivo_entrevistas = __DIR__ . '/data/entrevistas.json';
-$todas_las_entrevistas = file_exists($archivo_entrevistas) ? json_decode(file_get_contents($archivo_entrevistas), true) : [];
+$todas_las_entrevistas = [];
+$hubo_limpieza = false;
+
+if (file_exists($archivo_entrevistas)) {
+    $todas_las_entrevistas = json_decode(file_get_contents($archivo_entrevistas), true) ?: [];
+    
+    foreach ($todas_las_entrevistas as $key => $ent) {
+        if ($ent['estado'] === 'agendada') {
+            // Unimos fecha y hora y lo convertimos a "tiempo máquina"
+            $fecha_hora_entrevista = strtotime($ent['fecha_agendada'] . ' ' . $ent['hora_agendada']);
+            
+            // Si el tiempo actual superó por 24hs (86400 segundos) a la cita, la borramos
+            if (time() > ($fecha_hora_entrevista + 86400)) {
+                unset($todas_las_entrevistas[$key]);
+                $hubo_limpieza = true;
+            }
+        }
+    }
+    
+    // Si borró alguna, guardamos el archivo actualizado sin molestar al usuario
+    if ($hubo_limpieza) {
+        $todas_las_entrevistas = array_values($todas_las_entrevistas); // Reordenar
+        file_put_contents($archivo_entrevistas, json_encode($todas_las_entrevistas, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+}
 // LÓGICA PARA EL MENÚ DEL COMEDOR 
 $archivo_menu = __DIR__ . '/data/menu.json';
 $menu_hoy = [
@@ -988,7 +1012,6 @@ if (file_exists($archivo_cap)) {
             <a href="#" class="nav-item" data-vista="vista-admin-capacitaciones"><i>🎓</i> <span>Gestión Capacitaciones</span></a>
             <a href="#" class="nav-item" data-vista="vista-admin-talleres"><i>🏀</i> <span>Gestión Talleres</span></a> <a href="#" class="nav-item" data-vista="vista-comedor"><i>🥗</i> <span>Comedor</span></a>
             <a href="#" class="nav-item" data-vista="vista-transporte"><i>🚌</i> <span>Rutas de Transporte</span></a>
-            <a href="#" class="nav-item" data-vista="vista-mantenimiento"><i>🛠️</i> <span>Mantenimiento</span></a>
             <a href="#" class="nav-item" data-vista="vista-entrevistas"><i>🤝</i> <span>Entrevistas Admisión</span></a>
         </div>
         <?php endif; ?>
@@ -2500,48 +2523,6 @@ if (file_exists($archivo_cap)) {
             </div>
         </section>
 
-        <section id="vista-mantenimiento" class="vista-panel">
-            <header class="top-bar">
-                <div class="user-welcome">
-                    <h1>Mantenimiento e Infraestructura</h1>
-                    <p style="color: #666;">Control de reparaciones y estado de áreas.</p>
-                </div>
-                <div class="user-profile">
-                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
-                    <div class="user-avatar"><?php echo $iniciales; ?></div>
-                </div>
-            </header>
-
-            <div class="dashboard-grid">
-                <div class="stat-card">
-                    <h3>⚽ Canchas y Pileta</h3>
-                    <p>• Control de PH y Cloro en pileta.</p>
-                    <p>• Corte de césped programado: Viernes.</p>
-                    <button class="btn-accion" style="width:100%; margin-top:10px;">Reportar</button>
-                </div>
-
-                <div class="stat-card">
-                    <h3>🧪 Laboratorios</h3>
-                    <p>• Revisión de matafuegos: Enero 2027.</p>
-                    <p>• Inventario de reactivos: Al día.</p>
-                    <button class="btn-accion" style="width:100%; margin-top:10px;">Reportar</button>
-                </div>
-
-                <div class="stat-card">
-                    <h3>🏫 Aulas</h3>
-                    <p>• Estado Aires Acondicionados: Funcionando.</p>
-                    <p>• Mobiliario: 2 bancos a reparar en 4to B.</p>
-                    <button class="btn-accion" style="width:100%; margin-top:10px;">Reportar</button>
-                </div>
-
-                <div class="stat-card">
-                    <h3>🚻 Baños</h3>
-                    <p>• Control de insumos: Repuestos hoy 08:00 hs.</p>
-                    <p>• Estado cañerías: Sin novedades.</p>
-                    <button class="btn-accion" style="width:100%; margin-top:10px;">Reportar</button>
-                </div>
-            </div>
-        </section>
 
         <?php if ($es_alumno || $es_tutor): ?>
         <section id="vista-asistencia-alumno" class="vista-panel">
@@ -2859,6 +2840,16 @@ if (file_exists($archivo_cap)) {
                         <span style="font-size: 0.85rem; color: #155724; font-weight: normal;">📧 (Simulación de Sistema) Se ha enviado un correo automático al tutor con los detalles de la cita.</span>
                     </div>
                 <?php endif; ?>
+                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'entrevista_modificada'): ?>
+                    <div style="background: #e1f5fe; color: var(--azul-primario); padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 10px;">
+                        ✏️ Fecha y hora de la entrevista actualizadas correctamente.
+                    </div>
+                <?php endif; ?>
+                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'entrevista_eliminada'): ?>
+                    <div style="background: #fff5f2; color: var(--naranja); padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 10px;">
+                        🗑️ La solicitud de entrevista fue cancelada y eliminada.
+                    </div>
+                <?php endif; ?>
 
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div class="user-welcome">
@@ -2892,19 +2883,20 @@ if (file_exists($archivo_cap)) {
                                 <?php endif; ?>
                             </div>
                             
-                            <p style="color: #666; font-size: 0.9rem; margin: 5px 0;"><strong>🧒 Interesado/a:</strong> <?php echo htmlspecialchars($ent['alumno']); ?> (<?php echo htmlspecialchars($ent['nivel']); ?>)</p>
-                            <p style="color: #666; font-size: 0.9rem; margin: 5px 0;"><strong>📞 Contacto:</strong> <?php echo htmlspecialchars($ent['telefono']); ?> | ✉️ <?php echo htmlspecialchars($ent['email']); ?></p>
+                            <p style="color: #666; font-size: 0.9rem; margin: 5px 0;"><strong>🧒 Aspirante:</strong> <?php echo htmlspecialchars($ent['alumno']); ?> (<?php echo htmlspecialchars($ent['nivel']); ?>)</p>
+                            <p style="color: #666; font-size: 0.85rem; margin: 5px 0;"><strong>📄 DNI:</strong> <?php echo htmlspecialchars($ent['dni_alumno'] ?? 'No especificado'); ?> | <strong>🎂 Nacimiento:</strong> <?php echo htmlspecialchars(date('d/m/Y', strtotime($ent['fecha_nacimiento_alumno'] ?? ''))); ?></p>
+                            <p style="color: #666; font-size: 0.9rem; margin: 5px 0;"><strong>📞 Contacto Tutor:</strong> <?php echo htmlspecialchars($ent['telefono']); ?> | ✉️ <?php echo htmlspecialchars($ent['email']); ?></p>
                             
                             <hr style="border: 0; border-top: 1px dashed #ddd; margin: 15px 0;">
                             
                             <?php if ($es_pendiente): ?>
                                 <p style="font-size: 0.85rem; color: var(--azul-primario); font-weight: bold; margin-bottom: 10px;">🕒 Preferencia del Tutor: <?php echo htmlspecialchars($ent['disponibilidad']); ?></p>
                                 
-                                <form action="procesos/gestionar_entrevista.php" method="POST" style="background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+                                <form action="procesos/gestionar_entrevista.php" method="POST" onsubmit="return validarFechaHoraEntrevista(this);" style="background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
                                     <input type="hidden" name="id_entrevista" value="<?php echo htmlspecialchars($ent['id']); ?>">
                                     <label style="font-size: 0.85rem; font-weight: bold; color: #555;">Fijar Fecha y Hora:</label>
                                     <div style="display: flex; gap: 10px; margin-top: 5px; margin-bottom: 15px;">
-                                        <input type="date" name="fecha" required style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
+                                        <input type="date" name="fecha" min="<?php echo date('Y-m-d'); ?>" required style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
                                         <input type="time" name="hora" required style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
                                     </div>
                                     <button type="submit" class="btn-nuevo" style="width: 100%; background-color: var(--verde); font-size: 0.9rem;">✅ Agendar y Notificar</button>
@@ -2913,6 +2905,20 @@ if (file_exists($archivo_cap)) {
                                 <div style="background: #e6f6ec; padding: 15px; border-radius: 8px; border: 1px solid #c3e6cb; text-align: center;">
                                     <p style="margin: 0; color: #155724; font-weight: bold; font-size: 0.9rem;">Reunión Coordinada para el:</p>
                                     <h2 style="margin: 5px 0; color: var(--verde);"><?php echo date('d/m/Y', strtotime($ent['fecha_agendada'])); ?> a las <?php echo htmlspecialchars($ent['hora_agendada']); ?>hs</h2>
+                                    
+                                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+                                        <button class="btn-accion btn-editar-entrevista" 
+                                            data-id="<?php echo htmlspecialchars($ent['id']); ?>" 
+                                            data-fecha="<?php echo htmlspecialchars($ent['fecha_agendada']); ?>" 
+                                            data-hora="<?php echo htmlspecialchars($ent['hora_agendada']); ?>"
+                                            style="border-color: var(--celeste); color: var(--celeste);">✏️ Reprogramar</button>
+                                            
+                                        <form action="procesos/gestionar_entrevista.php" method="POST" onsubmit="return confirm('¿Estás seguro de cancelar esta entrevista?');" style="margin: 0;">
+                                            <input type="hidden" name="accion" value="borrar">
+                                            <input type="hidden" name="id_entrevista" value="<?php echo htmlspecialchars($ent['id']); ?>">
+                                            <button type="submit" class="btn-accion" style="border-color: var(--naranja); color: var(--naranja);">❌ Cancelar Cita</button>
+                                        </form>
+                                    </div>
                                 </div>
                             <?php endif; ?>
                             
@@ -3351,6 +3357,34 @@ if (file_exists($archivo_cap)) {
             <div class="modal-footer" style="background: #f4f7f6; padding: 15px 25px;">
                 <button type="button" class="btn-cancelar" onclick="document.getElementById('modal-ficha-alumno').classList.remove('modal-activo');">Cerrar Ficha</button>
             </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="modal-editar-entrevista">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Reprogramar Entrevista</h2>
+                <button type="button" class="btn-cerrar-modal" onclick="document.getElementById('modal-editar-entrevista').classList.remove('modal-activo');">×</button>
+            </div>
+            <form action="procesos/gestionar_entrevista.php" method="POST" class="form-dashboard" onsubmit="return validarFechaHoraEntrevista(this);">
+                <input type="hidden" name="accion" value="editar">
+                <input type="hidden" name="id_entrevista" id="edit-entrevista-id">
+                
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Nueva Fecha</label>
+                        <input type="date" name="fecha" id="edit-entrevista-fecha" min="<?php echo date('Y-m-d'); ?>" required style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
+                    </div>
+                    <div class="input-group">
+                        <label>Nueva Hora</label>
+                        <input type="time" name="hora" id="edit-entrevista-hora" required style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancelar" onclick="document.getElementById('modal-editar-entrevista').classList.remove('modal-activo');">Cancelar</button>
+                    <button type="submit" class="btn-guardar" style="background-color: var(--celeste);">Guardar Cambios</button>
+                </div>
+            </form>
         </div>
     </div>
     
@@ -3884,6 +3918,44 @@ if (file_exists($archivo_cap)) {
                 document.getElementById('modal-ficha-alumno').classList.add('modal-activo');
             });
         });
+
+        // --- MOTOR PARA REPROGRAMAR ENTREVISTAS ---
+        document.querySelectorAll('.btn-editar-entrevista').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('edit-entrevista-id').value = btn.getAttribute('data-id');
+                document.getElementById('edit-entrevista-fecha').value = btn.getAttribute('data-fecha');
+                document.getElementById('edit-entrevista-hora').value = btn.getAttribute('data-hora');
+                document.getElementById('modal-editar-entrevista').classList.add('modal-activo');
+            });
+        });
+
+        // --- MOTOR DE VALIDACIÓN DE FECHA/HORA DE ENTREVISTAS ---
+        function validarFechaHoraEntrevista(formulario) {
+            const inputFecha = formulario.querySelector('input[type="date"]');
+            const inputHora = formulario.querySelector('input[type="time"]');
+            
+            if (inputFecha && inputHora) {
+                const fechaElegida = inputFecha.value;
+                const horaElegida = inputHora.value;
+                
+                const ahora = new Date();
+                
+                // Ajustamos la zona horaria para que coincida exactamente con la local
+                const tzOffset = ahora.getTimezoneOffset() * 60000;
+                const localISOTime = (new Date(ahora - tzOffset)).toISOString().slice(0, -1);
+                const hoyStr = localISOTime.split("T")[0]; // Sacamos la fecha local
+                
+                // Si la entrevista es HOY, revisamos la hora
+                if (fechaElegida === hoyStr) {
+                    const horaActual = ahora.getHours().toString().padStart(2, '0') + ":" + ahora.getMinutes().toString().padStart(2, '0');
+                    if (horaElegida < horaActual) {
+                        alert("⚠️ Error: No podés agendar una entrevista en un horario que ya pasó.");
+                        return false; // Frena el envío del formulario
+                    }
+                }
+            }
+            return true;
+        }
     </script>
 </body>
 </html>

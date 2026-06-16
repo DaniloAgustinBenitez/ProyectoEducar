@@ -23,75 +23,94 @@
     <section class="page-hero">
         <div class="hero-badge">🤝 Admisiones 2025</div>
         <h2><span>Solicitud de Entrevista</span></h2>
-        <p>Dejanos tus datos básicos para coordinar una reunión presencial, conocer las instalaciones y el proyecto educativo.</p>
+        <p>Dejanos los datos básicos del aspirante y del tutor/a para coordinar una reunión presencial, conocer las instalaciones y el proyecto educativo.</p>
     </section>
 
     <main class="main-content">
-        <div class="form-card" style="max-width: 600px; margin: auto;">
+        <div class="form-card" style="max-width: 700px; margin: auto;">
             
             <div class="form-header" style="background-color: #f0f4f8; padding: 20px; border-radius: 8px; margin-bottom: 25px; text-align: center;">
                 <h3 style="color: var(--azul-primario); margin: 0 0 10px 0;">Coordinar Reunión</h3>
-                <p style="margin: 0; font-size: 0.9rem; color: #666;">Completá este breve formulario y nuestro equipo de admisiones se pondrá en contacto.</p>
+                <p style="margin: 0; font-size: 0.9rem; color: #666;">Completá este formulario y nuestro equipo de admisiones se pondrá en contacto.</p>
             </div>
 
             <form action="procesos/procesar_entrevista.php" method="POST">
                 
-                <div class="campo-grupo">
-                    <div class="campo">
-                        <label>Nombre y Apellido del Tutor/a <span class="req">*</span></label>
-                        <input type="text" name="tutor" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;">
+                <div style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px dashed #ddd;">
+                    <h4 style="color: var(--verde); margin-top: 0; margin-bottom: 15px;">🧒 Datos del Aspirante</h4>
+                    <div class="campo-grupo triple" style="grid-template-columns: 1fr 1fr;">
+                        <div class="campo">
+                            <label>Nombre y Apellido <span class="req">*</span></label>
+                            <input type="text" name="alumno" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        </div>
+                        <div class="campo">
+                            <label>DNI <span class="req">*</span></label>
+                            <input type="text" name="dni_alumno" required pattern="[0-9]{8}" minlength="8" maxlength="8" title="El DNI debe contener exactamente 8 números" placeholder="Ej: 45123456" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        </div>
+                    </div>
+                    <div class="campo-grupo triple" style="grid-template-columns: 1fr 1fr;">
+                        <div class="campo">
+                            <label>Fecha de Nacimiento <span class="req">*</span></label>
+                            <input type="date" name="fecha_nacimiento_alumno" id="input-nacimiento-alumno" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
+                        </div>
+                        <div class="campo">
+                            <label>Nivel de Interés <span class="req">*</span></label>
+                            <select name="nivel" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
+                                <option value="" disabled selected>Seleccioná...</option>
+                                <option value="Nivel Inicial">Nivel Inicial</option>
+                                <option value="Nivel Primario">Nivel Primario</option>
+                                <option value="Nivel Secundario">Nivel Secundario</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <div class="campo-grupo triple" style="grid-template-columns: 1fr 1fr;">
-                    <div class="campo">
-                        <label>Teléfono / WhatsApp <span class="req">*</span></label>
-                        <input type="tel" name="telefono" placeholder="+54 362..." required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;">
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: var(--naranja); margin-top: 0; margin-bottom: 15px;">👨‍👩‍👧 Datos del Tutor/a de Contacto</h4>
+                    <div class="campo-grupo triple" style="grid-template-columns: 1fr 1fr;">
+                        <div class="campo">
+                            <label>Nombre y Apellido <span class="req">*</span></label>
+                            <input type="text" name="tutor" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        </div>
+                        <div class="campo">
+                            <label>Teléfono / WhatsApp <span class="req">*</span></label>
+                            <input type="tel" name="telefono" placeholder="+54 362..." required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        </div>
                     </div>
-                    <div class="campo">
-                        <label>Correo Electrónico <span class="req">*</span></label>
-                        <input type="email" name="email" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;">
+
+                    <div class="campo-grupo triple" style="grid-template-columns: 1fr 1fr;">
+                        <div class="campo">
+                            <label>Correo Electrónico <span class="req">*</span></label>
+                            <input type="email" name="email" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        </div>
+                        <div class="campo">
+                            <label>Preferencia Horaria</label>
+                            <select name="disponibilidad" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
+                                <option value="Indiferente">Me da igual</option>
+                                <option value="Turno Mañana (8 a 12hs)">Turno Mañana (8 a 12hs)</option>
+                                <option value="Turno Tarde (14 a 18hs)">Turno Tarde (14 a 18hs)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <div class="campo-grupo triple" style="grid-template-columns: 1fr 1fr;">
-                    <div class="campo">
-                        <label>Nombre del Alumno/a <span class="req">*</span></label>
-                        <input type="text" name="alumno" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;">
-                    </div>
-                    <div class="campo">
-                        <label>Nivel de Interés <span class="req">*</span></label>
-                        <select name="nivel" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
-                            <option value="" disabled selected>Seleccioná...</option>
-                            <option value="Nivel Inicial">Nivel Inicial</option>
-                            <option value="Nivel Primario">Nivel Primario</option>
-                            <option value="Nivel Secundario">Nivel Secundario</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="campo-grupo">
-                    <div class="campo">
-                        <label>Preferencia Horaria para la entrevista</label>
-                        <select name="disponibilidad" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
-                            <option value="Indiferente">Me da igual</option>
-                            <option value="Turno Mañana (8 a 12hs)">Turno Mañana (8 a 12hs)</option>
-                            <option value="Turno Tarde (14 a 18hs)">Turno Tarde (14 a 18hs)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-enviar" style="width: 100%; padding: 15px; background: var(--verde); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 15px;">
+                <button type="submit" class="btn-enviar" style="width: 100%; padding: 15px; background: var(--verde); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 5px;">
                     Enviar Solicitud
                 </button>
             </form>
             
             <script>
-                // Pequeño script para mostrar cartel de éxito usando la URL
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.get('msj') === 'exito') {
                     alert('¡Solicitud enviada correctamente! Nos comunicaremos a la brevedad.');
                 }
+                // Candado: La fecha de nacimiento no puede ser mayor a HOY
+            const inputNac = document.getElementById('input-nacimiento-alumno');
+            if (inputNac) {
+                // Obtenemos la fecha actual en formato YYYY-MM-DD
+                const hoy = new Date().toISOString().split("T")[0];
+                inputNac.max = hoy; 
+            }
             </script>
         </div>
     </main>

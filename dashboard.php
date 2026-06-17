@@ -303,7 +303,45 @@ $todas_las_capacitaciones = [];
 if (file_exists($archivo_cap)) {
     $todas_las_capacitaciones = json_decode(file_get_contents($archivo_cap), true) ?: [];
 }
+
+// LÓGICA DEL SIMULADOR DE CORREOS
+$archivo_correos = __DIR__ . '/data/correos.json';
+$todos_los_correos = file_exists($archivo_correos) ? json_decode(file_get_contents($archivo_correos), true) : [];
+
+// LÓGICA DE RECURSOS HUMANOS (CON AUTOLIMPIEZA Y BORRADO DE PDFs)
+$archivo_postulaciones = __DIR__ . '/data/postulaciones.json';
+$todas_las_postulaciones = [];
+$hubo_limpieza_rrhh = false;
+
+if (file_exists($archivo_postulaciones)) {
+    $todas_las_postulaciones = json_decode(file_get_contents($archivo_postulaciones), true) ?: [];
+    
+    foreach ($todas_las_postulaciones as $key => $post) {
+        if ($post['estado'] === 'agendada') {
+            $fecha_hora_entrevista = strtotime($post['fecha_entrevista'] . ' ' . $post['hora_entrevista']);
+            
+            // Si pasaron 24hs (86400 segundos) de la cita, borramos el registro
+            if (time() > ($fecha_hora_entrevista + 86400)) {
+                
+                // ¡Súper importante! Borramos el archivo PDF físico del servidor
+                if (!empty($post['cv']) && file_exists(__DIR__ . '/' . $post['cv'])) {
+                    unlink(__DIR__ . '/' . $post['cv']);
+                }
+                
+                unset($todas_las_postulaciones[$key]);
+                $hubo_limpieza_rrhh = true;
+            }
+        }
+    }
+    
+    // Guardamos el JSON limpio sin molestar al usuario
+    if ($hubo_limpieza_rrhh) {
+        $todas_las_postulaciones = array_values($todas_las_postulaciones);
+        file_put_contents($archivo_postulaciones, json_encode($todas_las_postulaciones, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -710,6 +748,8 @@ if (file_exists($archivo_cap)) {
         .nav-item[data-vista="vista-actividades"].menu-activo { color: var(--rosa); border-right: 4px solid var(--rosa); }
         #vista-actividades .stat-card { border-left-color: var(--rosa); }
         #vista-actividades .btn-nuevo { background-color: var(--rosa); }
+        .nav-item[data-vista="vista-rrhh"].menu-activo { color: var(--rosa); border-right: 4px solid var(--rosa); }
+        #vista-rrhh .stat-card { border-left-color: var(--rosa); }
         /* --- ESTILOS DEL ACORDEÓN DE CALIFICACIONES --- */
         .acordeon-materia {
             background: white;
@@ -1013,6 +1053,8 @@ if (file_exists($archivo_cap)) {
             <a href="#" class="nav-item" data-vista="vista-admin-talleres"><i>🏀</i> <span>Gestión Talleres</span></a> <a href="#" class="nav-item" data-vista="vista-comedor"><i>🥗</i> <span>Comedor</span></a>
             <a href="#" class="nav-item" data-vista="vista-transporte"><i>🚌</i> <span>Rutas de Transporte</span></a>
             <a href="#" class="nav-item" data-vista="vista-entrevistas"><i>🤝</i> <span>Entrevistas Admisión</span></a>
+            <a href="#" class="nav-item" data-vista="vista-rrhh"><i>💼</i> <span>Recursos Humanos (RRHH)</span></a>
+            <a href="#" class="nav-item" data-vista="vista-correos"><i>📧</i> <span>Registro de Correos</span></a>
         </div>
         <?php endif; ?>
         <div class="menu-section" style="margin-top: auto; padding-bottom: 20px;">
@@ -2929,6 +2971,156 @@ if (file_exists($archivo_cap)) {
             </div>
         </section>
         <?php endif; ?>
+        <?php if ($es_admin): ?>
+        <section id="vista-rrhh" class="vista-panel">
+            <header class="top-bar" style="flex-direction: column; align-items: stretch; gap: 15px;">
+                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'postulacion_agendada'): ?>
+                    <div style="background: #e6f6ec; color: var(--verde); padding: 12px; border-radius: 8px; font-weight: bold;">
+                        ✅ Convocatoria agendada y correo real enviado al postulante.
+                    </div>
+                <?php endif; ?>
+                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'postulacion_modificada'): ?>
+                    <div style="background: #e1f5fe; color: var(--azul-primario); padding: 12px; border-radius: 8px; font-weight: bold;">
+                        ✏️ Entrevista laboral reprogramada y notificada con éxito.
+                    </div>
+                <?php endif; ?>
+                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'postulacion_eliminada'): ?>
+                    <div style="background: #fff5f2; color: var(--naranja); padding: 12px; border-radius: 8px; font-weight: bold;">
+                        🗑️ Currículum y postulación eliminados del servidor.
+                    </div>
+                <?php endif; ?>
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="user-welcome">
+                        <h1>Recursos Humanos (Bolsa de Trabajo)</h1>
+                        <p style="color: #666;">Revisión de Currículums Vitae recibidos y citación a entrevistas de trabajo.</p>
+                    </div>
+                    <div class="user-profile">
+                        <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
+                        <div class="user-avatar"><?php echo $iniciales; ?></div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-grid">
+                <?php if (empty($todas_las_postulaciones)): ?>
+                    <div class="stat-card" style="grid-column: 1 / -1;">
+                        <p style="text-align: center; color: #888;">No se han recibido currículums postulantes por el momento.</p>
+                    </div>
+                <?php else: ?>
+                    <?php foreach (array_reverse($todas_las_postulaciones) as $p): 
+                        $es_pendiente = ($p['estado'] === 'pendiente');
+                        $color_b = $es_pendiente ? 'var(--naranja)' : 'var(--verde)';
+                    ?>
+                        <div class="stat-card" style="border-left-color: <?php echo $color_b; ?>;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                                <h3 style="margin: 0; font-size: 1.15rem;">👤 <?php echo htmlspecialchars($p['nombre']); ?></h3>
+                                <span class="badge <?php echo $es_pendiente ? 'badge-pendiente' : 'badge-aprobado'; ?>">
+                                    <?php echo ucfirst($p['estado']); ?>
+                                </span>
+                            </div>
+                            
+                            <p style="color: #444; font-size: 0.9rem; margin: 5px 0;"><strong>🎯 Área de interés:</strong> <span style="color: var(--azul-primario); font-weight: bold;"><?php echo htmlspecialchars($p['area']); ?></span></p>
+                            <p style="color: #666; font-size: 0.9rem; margin: 5px 0;"><strong>📞 Contacto:</strong> <?php echo htmlspecialchars($p['telefono']); ?> | ✉️ <?php echo htmlspecialchars($p['email']); ?></p>
+                            
+                            <div style="margin: 15px 0;">
+                                <a href="<?php echo htmlspecialchars($p['cv']); ?>" target="_blank" class="btn-accion" style="display: block; text-align: center; background: #fafafa; border-color: var(--azul-primario); color: var(--azul-primario); font-weight: bold; text-decoration: none; padding: 8px;">
+                                    📎 Abrir Currículum Vitae (PDF)
+                                </a>
+                            </div>
+                            
+                            <hr style="border: 0; border-top: 1px dashed #ddd; margin: 15px 0;">
+                            
+                            <?php if ($es_pendiente): ?>
+                                <form action="procesos/gestionar_postulacion.php" method="POST" onsubmit="return validarFechaHoraEntrevista(this);" style="background: #fafafa; padding: 12px; border-radius: 8px; border: 1px solid #eee;">
+                                    <input type="hidden" name="id_postulacion" value="<?php echo htmlspecialchars($p['id']); ?>">
+                                    <label style="font-size: 0.8rem; font-weight: bold; color: #555;">Agendar Entrevista Laboral:</label>
+                                    <div style="display: flex; gap: 8px; margin-top: 5px; margin-bottom: 10px;">
+                                        <input type="date" name="fecha" min="<?php echo date('Y-m-d'); ?>" required style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 0.85rem;">
+                                        <input type="time" name="hora" required style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 0.85rem;">
+                                    </div>
+                                    <button type="submit" class="btn-nuevo" style="width: 100%; background-color: var(--azul-primario); font-size: 0.85rem; padding: 8px;">Convocar a Reunión</button>
+                                </form>
+                            <?php else: ?>
+                                <div style="background: #e6f6ec; padding: 12px; border-radius: 8px; border: 1px solid #c3e6cb; text-align: center;">
+                                    <p style="margin: 0; color: #155724; font-weight: bold; font-size: 0.85rem;">Cita laboral pactada:</p>
+                                    <h3 style="margin: 5px 0; color: var(--verde); font-size: 1.2rem;"><?php echo date('d/m/Y', strtotime($p['fecha_entrevista'])); ?> - <?php echo htmlspecialchars($p['hora_entrevista']); ?>hs</h3>
+                                    
+                                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+                                        <button class="btn-accion btn-editar-postulacion" 
+                                            data-id="<?php echo htmlspecialchars($p['id']); ?>" 
+                                            data-fecha="<?php echo htmlspecialchars($p['fecha_entrevista']); ?>" 
+                                            data-hora="<?php echo htmlspecialchars($p['hora_entrevista']); ?>"
+                                            style="border-color: var(--celeste); color: var(--celeste); font-size: 0.8rem; padding: 4px 8px;">✏️ Cambiar</button>
+                                            
+                                        <form action="procesos/gestionar_postulacion.php" method="POST" onsubmit="return confirm('¿Seguro querés descartar esta postulación laboral?');" style="margin: 0;">
+                                            <input type="hidden" name="accion" value="borrar">
+                                            <input type="hidden" name="id_postulacion" value="<?php echo htmlspecialchars($p['id']); ?>">
+                                            <button type="submit" class="btn-accion" style="border-color: var(--naranja); color: var(--naranja); font-size: 0.8rem; padding: 4px 8px;">❌ Descartar</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <p style="font-size: 0.7rem; color: #aaa; text-align: right; margin-top: 8px; margin-bottom: 0;">Postulado el: <?php echo $p['fecha_solicitud']; ?></p>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </section>
+        <?php endif; ?>
+
+        <?php if ($es_admin): ?>
+        <section id="vista-correos" class="vista-panel">
+            <header class="top-bar">
+                <div class="user-welcome">
+                    <h1>Bandeja de Salida (Simulador)</h1>
+                    <p style="color: #666;">Auditoría de correos automáticos disparados por el sistema.</p>
+                </div>
+                <div class="user-profile">
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
+                    <div class="user-avatar"><?php echo $iniciales; ?></div>
+                </div>
+            </header>
+
+            <div class="dashboard-grid" style="grid-template-columns: 1fr;">
+                <div class="stat-card" style="border-left-color: var(--celeste);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0;">Correos Enviados (Outbox)</h3>
+                        <span class="badge" style="background: #e1f5fe; color: var(--azul-primario);"><?php echo count($todos_los_correos); ?> Procesados</span>
+                    </div>
+
+                    <?php if (empty($todos_los_correos)): ?>
+                        <p style="color: #999; text-align: center; padding: 20px;">No se ha registrado el envío de ningún correo todavía.</p>
+                    <?php else: ?>
+                        <div style="overflow-x: auto;">
+                            <table class="tabla-datos">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 15%;">Fecha/Hora</th>
+                                        <th style="width: 25%;">Destinatario</th>
+                                        <th style="width: 60%;">Asunto y Contenido</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach (array_reverse($todos_los_correos) as $mail): ?>
+                                        <tr>
+                                            <td style="color: #888; font-size: 0.85rem;"><strong><?php echo $mail['fecha_envio']; ?></strong></td>
+                                            <td><span style="background: #f4f7f6; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.85rem; border: 1px solid #ddd;">✉️ <?php echo htmlspecialchars($mail['destinatario']); ?></span></td>
+                                            <td>
+                                                <strong style="color: var(--azul-primario); display: block; margin-bottom: 5px;"><?php echo htmlspecialchars($mail['asunto']); ?></strong>
+                                                <p style="margin: 0; font-size: 0.85rem; color: #555; white-space: pre-wrap; background: #fafafa; padding: 10px; border-left: 3px solid #ddd; border-radius: 4px;"><?php echo htmlspecialchars($mail['cuerpo']); ?></p>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
 
     </main>
     
@@ -3382,6 +3574,35 @@ if (file_exists($archivo_cap)) {
                 
                 <div class="modal-footer">
                     <button type="button" class="btn-cancelar" onclick="document.getElementById('modal-editar-entrevista').classList.remove('modal-activo');">Cancelar</button>
+                    <button type="submit" class="btn-guardar" style="background-color: var(--celeste);">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-editar-postulacion">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Reprogramar Turno de Entrevista Laboral</h2>
+                <button type="button" class="btn-cerrar-modal" onclick="document.getElementById('modal-editar-postulacion').classList.remove('modal-activo');">×</button>
+            </div>
+            <form action="procesos/gestionar_postulacion.php" method="POST" class="form-dashboard" onsubmit="return validarFechaHoraEntrevista(this);">
+                <input type="hidden" name="accion" value="editar">
+                <input type="hidden" name="id_postulacion" id="edit-postulacion-id">
+                
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Nueva Fecha</label>
+                        <input type="date" name="fecha" id="edit-postulacion-fecha" min="<?php echo date('Y-m-d'); ?>" required style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
+                    </div>
+                    <div class="input-group">
+                        <label>Nueva Hora</label>
+                        <input type="time" name="hora" id="edit-postulacion-hora" required style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancelar" onclick="document.getElementById('modal-editar-postulacion').classList.remove('modal-activo');">Cancelar</button>
                     <button type="submit" class="btn-guardar" style="background-color: var(--celeste);">Guardar Cambios</button>
                 </div>
             </form>
@@ -3956,6 +4177,16 @@ if (file_exists($archivo_cap)) {
             }
             return true;
         }
+
+        // --- MOTOR PARA REPROGRAMAR POSTULACIONES LABORALES ---
+        document.querySelectorAll('.btn-editar-postulacion').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('edit-postulacion-id').value = btn.getAttribute('data-id');
+                document.getElementById('edit-postulacion-fecha').value = btn.getAttribute('data-fecha');
+                document.getElementById('edit-postulacion-hora').value = btn.getAttribute('data-hora');
+                document.getElementById('modal-editar-postulacion').classList.add('modal-activo');
+            });
+        });
     </script>
 </body>
 </html>

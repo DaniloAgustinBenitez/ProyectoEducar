@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trabajá con Nosotros | Educar para Transformar</title>
+    <link rel="stylesheet" href="inscripcion.css">
+</head>
+<body>
+    <div class="palette-stripe" aria-hidden="true">
+        <span class="s1"></span><span class="s2"></span><span class="s3"></span>
+        <span class="s4"></span><span class="s5"></span><span class="s6"></span>
+    </div>
+
+    <header>
+        <div class="logo-container">
+            <img src="img/logo.png" alt="Logo Educar para Transformar">
+            <h1>Educar para Transformar</h1>
+        </div>
+        <a href="index.html" class="btn-volver">← Volver al inicio</a>
+    </header>
+
+    <section class="page-hero" style="background-color: #f0f4f8;">
+        <div class="hero-badge" style="background-color: var(--rosa); color: white;">💼 Oportunidades Laborales</div>
+        <h2><span>Convocatoria Docente y Administrativa</span></h2>
+        <p>Buscamos profesionales comprometidos con la transformación educativa para sumarse a nuestro proyecto institucional de cara al ciclo lectivo 2027.</p>
+    </section>
+
+    <main class="main-content">
+        <div class="form-card" style="max-width: 650px; margin: auto;">
+            
+            <form action="procesos/procesar_postulacion.php" method="POST" enctype="multipart/form-data">
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: var(--azul-primario); margin-top: 0; margin-bottom: 15px;">📄 Datos del Postulante</h4>
+                    
+                    <div class="campo" style="margin-bottom: 15px;">
+                        <label>Nombre y Apellido Completo <span class="req">*</span></label>
+                        <input type="text" name="nombre" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+
+                    <div class="campo-grupo triple" style="grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="campo">
+                            <label>Correo Electrónico de Contacto <span class="req">*</span></label>
+                            <input type="email" name="email" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        </div>
+                        <div class="campo">
+                            <label>Teléfono / WhatsApp <span class="req">*</span></label>
+                            <input type="tel" name="telefono" placeholder="+54 362..." required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        </div>
+                    </div>
+
+                    <div class="campo" style="margin-bottom: 20px;">
+                        <label>Área o Puesto de Interés <span class="req">*</span></label>
+                        <select name="area" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
+                            <option value="" disabled selected>Seleccioná un área...</option>
+                            <option value="Docente Nivel Inicial">Docente Nivel Inicial</option>
+                            <option value="Docente Nivel Primario">Docente Nivel Primario</option>
+                            <option value="Docente Nivel Secundario">Docente Nivel Secundario</option>
+                            <option value="Equipo Directivo / Coordinación">Equipo Directivo / Coordinación</option>
+                            <option value="Personal Administrativo">Personal Administrativo / Maestranza</option>
+                        </select>
+                    </div>
+
+                    <div class="campo" style="background: #fafafa; padding: 20px; border: 2px dashed #ccc; border-radius: 8px; text-align: center;">
+                        <label style="font-weight: bold; display: block; margin-bottom: 10px;">Adjuntar Currículum Vitae (Solo PDF) <span class="req">*</span></label>
+                        <input type="file" name="cv" accept=".pdf" required style="font-family: inherit; font-size: 0.9rem;">
+                        <small style="display: block; color: #777; margin-top: 5px;">Formato requerido de archivo: .pdf (Máximo 5MB)</small>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-enviar" style="width: 100%; padding: 15px; background: var(--azul-primario); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 10px;">
+                    Enviar Postulación
+                </button>
+            </form>
+            
+        </div>
+    </main>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('msj') === 'exito') {
+            alert('¡Postulación enviada con éxito! Tu CV ya está registrado y se envió un mail de confirmación.');
+        }
+        if (urlParams.get('error') === 'archivo') {
+            alert('⚠️ Error: El archivo adjunto debe ser estrictamente un PDF válido.');
+        }
+    </script>
+</body>
+</html>

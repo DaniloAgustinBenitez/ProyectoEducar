@@ -1,73 +1,45 @@
 <?php
 session_start();
+require_once 'conexion.php';
 
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
-    header('Location: ../login.php');
+    header('Location: ../dashboard.php');
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $accion = $_POST['accion'] ?? '';
-    $profesor = trim($_POST['profesor'] ?? '');
-    
-    // AHORA RECIBIMOS EL NIVEL DIRECTAMENTE DEL FORMULARIO
-    $nivel = $_POST['nivel'] ?? 'secundaria'; 
-    $curso = $_POST['curso'] ?? '';
+    $accion   = $_POST['accion'] ?? '';
+    $nivel    = $_POST['nivel'] ?? '';
+    $profesor = $_POST['profesor'] ?? '';
+    $curso    = $_POST['curso'] ?? '';
     $division = $_POST['division'] ?? '';
-    $materia = $_POST['materia'] ?? '';
+    $materia  = $_POST['materia'] ?? '';
 
-    $archivo_asig = __DIR__ . '/../data/asignaciones.json';
-    $asignaciones = file_exists($archivo_asig) ? json_decode(file_get_contents($archivo_asig), true) : [];
-
-    if ($accion === 'asignar' && !empty($profesor) && !empty($curso) && !empty($division) && !empty($materia)) {
-        if (!isset($asignaciones[$profesor])) {
-            $asignaciones[$profesor] = [];
-        }
-
-        // Evitamos registros duplicados
-        $ya_existe = false;
-        foreach ($asignaciones[$profesor] as $asig) {
-            if (($asig['nivel'] ?? '') === $nivel && $asig['curso'] === $curso && $asig['division'] === $division && $asig['materia'] === $materia) {
-                $ya_existe = true;
-                break;
+    if (!empty($accion) && !empty($profesor) && !empty($curso) && !empty($division) && !empty($materia)) {
+        try {
+            if ($accion === 'asignar') {
+                $stmt = $pdo->prepare("INSERT INTO catedras (docente_nombre, nivel, curso, division, materia) VALUES (:prof, :nivel, :curso, :div, :mat)");
+                $stmt->execute([
+                    ':prof'  => $profesor,
+                    ':nivel' => $nivel,
+                    ':curso' => $curso,
+                    ':div'   => $division,
+                    ':mat'   => $materia
+                ]);
+            } elseif ($accion === 'quitar') {
+                $stmt = $pdo->prepare("DELETE FROM catedras WHERE docente_nombre = :prof AND curso = :curso AND division = :div AND materia = :mat");
+                $stmt->execute([
+                    ':prof'  => $profesor,
+                    ':curso' => $curso,
+                    ':div'   => $division,
+                    ':mat'   => $materia
+                ]);
             }
-        }
-
-        if (!$ya_existe) {
-            $asignaciones[$profesor][] = [
-                "nivel" => $nivel,
-                "curso" => $curso,
-                "division" => $division,
-                "turno" => "Mañana",
-                "materia" => $materia
-            ];
-            file_put_contents($archivo_asig, json_encode($asignaciones, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-        }
-    } 
-    
-    elseif ($accion === 'quitar' && !empty($profesor) && !empty($curso) && !empty($division) && !empty($materia)) {
-        if (isset($asignaciones[$profesor])) {
-            foreach ($asignaciones[$profesor] as $indice => $asig) {
-                if (($asig['nivel'] ?? '') === $nivel && $asig['curso'] === $curso && $asig['division'] === $division && $asig['materia'] === $materia) {
-                    unset($asignaciones[$profesor][$indice]);
-                    $asignaciones[$profesor] = array_values($asignaciones[$profesor]); // Reindexamos para limpiar vacíos
-                    break;
-                }
-            }
-
-            if (empty($asignaciones[$profesor])) {
-                unset($asignaciones[$profesor]);
-            }
-
-            file_put_contents($archivo_asig, json_encode($asignaciones, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        } catch (PDOException $e) {
+            error_log("Error en procesar_asignacion: " . $e->getMessage());
         }
     }
-
-    // Volvemos con el ancla de la vista para no perdernos
-    header('Location: ../dashboard.php?vista=vista-cursos');
-    exit;
 }
 
-header('Location: ../dashboard.php');
+header('Location: ../dashboard.php?vista=vista-cursos');
 exit;
-?>

@@ -9,82 +9,61 @@ if (!isset($_SESSION['usuario'])) {
 $rol_actual = $_SESSION['rol'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once 'conexion.php';
     $accion = $_POST['accion'] ?? '';
-    
-    $archivo_cap = __DIR__ . '/../data/capacitaciones.json';
-    if (!file_exists(__DIR__ . '/../data')) mkdir(__DIR__ . '/../data', 0777, true);
-    $capacitaciones = file_exists($archivo_cap) ? json_decode(file_get_contents($archivo_cap), true) : [];
 
     // --- ACCIONES DEL ADMINISTRADOR ---
     if ($rol_actual === 'admin') {
-        if ($accion === 'crear') {
-            $nueva_cap = [
-                'id' => uniqid('cap_'),
-                'titulo' => trim($_POST['titulo'] ?? ''),
-                'fecha' => trim($_POST['fecha'] ?? ''),
-                'hora' => trim($_POST['hora'] ?? ''),
-                'lugar' => trim($_POST['lugar'] ?? ''),
-                'inscriptos' => []
-            ];
-            
-            if (!empty($nueva_cap['titulo']) && !empty($nueva_cap['fecha'])) {
-                $capacitaciones[] = $nueva_cap;
-                file_put_contents($archivo_cap, json_encode($capacitaciones, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        try {
+            if ($accion === 'crear') {
+                $titulo = trim($_POST['titulo'] ?? '');
+                $fecha  = trim($_POST['fecha']  ?? '');
+                $hora   = trim($_POST['hora']   ?? '') ?: null;
+                $lugar  = trim($_POST['lugar']  ?? '');
+
+                if (!empty($titulo) && !empty($fecha)) {
+                    $stmt = $pdo->prepare("INSERT INTO capacitaciones (titulo, fecha, hora, lugar) VALUES (:titulo, :fecha, :hora, :lugar)");
+                    $stmt->execute([':titulo' => $titulo, ':fecha' => $fecha, ':hora' => $hora, ':lugar' => $lugar]);
+                }
             }
+
+            if ($accion === 'borrar') {
+                $id_borrar = $_POST['id_cap'] ?? '';
+                $stmt = $pdo->prepare("DELETE FROM capacitaciones WHERE id = :id");
+                $stmt->execute([':id' => $id_borrar]);
+            }
+        } catch (PDOException $e) {
+            error_log("Error en capacitación (admin): " . $e->getMessage());
         }
 
-        if ($accion === 'borrar') {
-            $id_borrar = $_POST['id_cap'] ?? '';
-            $capacitaciones = array_filter($capacitaciones, function($c) use ($id_borrar) {
-                return $c['id'] !== $id_borrar;
-            });
-            file_put_contents($archivo_cap, json_encode(array_values($capacitaciones), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-        }
-        
         header('Location: ../dashboard.php?vista=vista-admin-capacitaciones');
         exit;
     }
 
-    // --- ACCIONES DE LOS DOCENTES (Profesores, Maestros, Preceptores) ---
+    // --- ACCIONES DE LOS DOCENTES ---
     if ($rol_actual === 'profesor' || $rol_actual === 'preceptor') {
         $id_cap = trim($_POST['id_cap'] ?? '');
-        
-        // Buscamos el nombre completo del docente para anotarlo
-        $archivo_usuarios = __DIR__ . '/../data/usuarios.json';
-        $usuarios = file_exists($archivo_usuarios) ? json_decode(file_get_contents($archivo_usuarios), true) : [];
-        $nombre_docente = $_SESSION['usuario'];
-        foreach ($usuarios as $u) {
-            if ($u['usuario'] === $_SESSION['usuario']) { 
-                $nombre_docente = $u['nombre']; 
-                break; 
+
+        try {
+            // Buscamos el nombre completo del docente para anotarlo
+            $stmt_u = $pdo->prepare("SELECT nombre FROM usuarios WHERE username = :user LIMIT 1");
+            $stmt_u->execute([':user' => $_SESSION['usuario']]);
+            $u = $stmt_u->fetch();
+            $nombre_docente = $u ? $u['nombre'] : $_SESSION['usuario'];
+
+            if ($accion === 'inscribir') {
+                $stmt = $pdo->prepare("INSERT IGNORE INTO cap_inscriptos (cap_id, docente_nombre) VALUES (:id, :docente)");
+                $stmt->execute([':id' => $id_cap, ':docente' => $nombre_docente]);
             }
+
+            if ($accion === 'baja') {
+                $stmt = $pdo->prepare("DELETE FROM cap_inscriptos WHERE cap_id = :id AND docente_nombre = :docente");
+                $stmt->execute([':id' => $id_cap, ':docente' => $nombre_docente]);
+            }
+        } catch (PDOException $e) {
+            error_log("Error en capacitación (docente): " . $e->getMessage());
         }
 
-        if ($accion === 'inscribir') {
-            foreach ($capacitaciones as &$cap) {
-                if ($cap['id'] === $id_cap) {
-                    if (!isset($cap['inscriptos'])) $cap['inscriptos'] = [];
-                    if (!in_array($nombre_docente, $cap['inscriptos'])) {
-                        $cap['inscriptos'][] = $nombre_docente;
-                    }
-                    break;
-                }
-            }
-        }
-
-        if ($accion === 'baja') {
-            foreach ($capacitaciones as &$cap) {
-                if ($cap['id'] === $id_cap && isset($cap['inscriptos'])) {
-                    $cap['inscriptos'] = array_filter($cap['inscriptos'], function($d) use ($nombre_docente) {
-                        return $d !== $nombre_docente;
-                    });
-                    $cap['inscriptos'] = array_values($cap['inscriptos']); // Reorganizamos el array
-                    break;
-                }
-            }
-        }
-
-        file_put_contents($archivo_cap, json_encode($capacitaciones, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
         header('Location: ../dashboard.php?vista=vista-recursos-salud');
         exit;
     }

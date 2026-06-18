@@ -1,33 +1,40 @@
 <?php
-$archivo_json = __DIR__ . '/datos.json';
+require_once __DIR__ . '/../../procesos/conexion.php';
 
-// Lee el archivo y devuelve un array
-function obtenerDatos()
+function obtenerDatos(): array
 {
-    global $archivo_json;
-    if (!file_exists($archivo_json))
-        return [];
-    $contenido = file_get_contents($archivo_json);
-    return json_decode($contenido, true) ?: [];
+    global $pdo;
+    $stmt = $pdo->query("SELECT id, titulo, descripcion, imagen FROM admin_niveles ORDER BY id ASC");
+    return $stmt->fetchAll();
 }
 
-// Guarda el array de nuevo en el JSON
-function guardarDatos($lista)
+function guardarDatos(array $lista): bool
 {
-    global $archivo_json;
-    // array_values resetea los índices por si borramos algo
-    $json_string = json_encode(array_values($lista), JSON_PRETTY_PRINT);
-    return file_put_contents($archivo_json, $json_string);
-}
-
-// Busca un elemento específico por su ID
-function buscarPorId($id)
-{
-    $datos = obtenerDatos();
-    foreach ($datos as $item) {
-        if ($item['id'] == $id)
-            return $item;
+    global $pdo;
+    try {
+        $pdo->exec("TRUNCATE TABLE admin_niveles");
+        $stmt = $pdo->prepare("INSERT INTO admin_niveles (id, titulo, descripcion, imagen) VALUES (:id, :titulo, :desc, :img)");
+        foreach (array_values($lista) as $item) {
+            $stmt->execute([
+                ':id'     => $item['id'],
+                ':titulo' => $item['titulo'],
+                ':desc'   => $item['descripcion'],
+                ':img'    => $item['imagen'] ?? ''
+            ]);
+        }
+        return true;
+    } catch (PDOException $e) {
+        error_log("Error en guardarDatos admin: " . $e->getMessage());
+        return false;
     }
-    return null;
+}
+
+function buscarPorId($id): ?array
+{
+    global $pdo;
+    $stmt = $pdo->prepare("SELECT id, titulo, descripcion, imagen FROM admin_niveles WHERE id = :id LIMIT 1");
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch();
+    return $row ?: null;
 }
 ?>

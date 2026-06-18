@@ -1,5 +1,7 @@
 <?php
 session_start();
+require_once 'conexion.php';
+
 if (!isset($_SESSION['usuario'])) {
     header('Location: ../login.php');
     exit;
@@ -7,50 +9,27 @@ if (!isset($_SESSION['usuario'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password_actual = $_POST['password_actual'] ?? '';
-    $password_nueva = $_POST['password_nueva'] ?? '';
-    $nombre_sesion = $_SESSION['usuario']; // Recuperamos la identidad desde la sesión
+    $password_nueva  = $_POST['password_nueva']  ?? '';
+    $username_sesion = $_SESSION['usuario'];
 
     if (!empty($password_actual) && !empty($password_nueva)) {
-        $archivo_usuarios = __DIR__ . '/../data/usuarios.json';
-        $usuarios = file_exists($archivo_usuarios) ? json_decode(file_get_contents($archivo_usuarios), true) : [];
-        
-        $encontrado = false;
-        $clave_correcta = false;
+        try {
+            $stmt = $pdo->prepare("SELECT id, password FROM usuarios WHERE username = :user LIMIT 1");
+            $stmt->execute([':user' => $username_sesion]);
+            $usuario_bd = $stmt->fetch();
 
-        // Buscamos al usuario comparando con el nombre en la sesión
-        foreach ($usuarios as &$u) {
-            if ($u['nombre'] === $nombre_sesion) {
-                $encontrado = true;
-                if (password_verify($password_actual, $u['password'])) {
-                    $u['password'] = password_hash($password_nueva, PASSWORD_DEFAULT);
-                    $clave_correcta = true;
-                }
-                break;
+            if ($usuario_bd && password_verify($password_actual, $usuario_bd['password'])) {
+                $nuevo_hash = password_hash($password_nueva, PASSWORD_DEFAULT);
+                $stmt_upd = $pdo->prepare("UPDATE usuarios SET password = :hash WHERE id = :id");
+                $stmt_upd->execute([':hash' => $nuevo_hash, ':id' => $usuario_bd['id']]);
+                header('Location: ../dashboard.php?msj=clave_actualizada');
+                exit;
+            } else {
+                header('Location: ../dashboard.php?error=clave_incorrecta');
+                exit;
             }
-        }
-
-        // Resguardo alternativo si la sesión tuviera guardado el ID de usuario en vez del nombre completo
-        if (!$encontrado) {
-            foreach ($usuarios as &$u) {
-                if ($u['usuario'] === $nombre_sesion) {
-                    $encontrado = true;
-                    if (password_verify($password_actual, $u['password'])) {
-                        $u['password'] = password_hash($password_nueva, PASSWORD_DEFAULT);
-                        $clave_correcta = true;
-                    }
-                    break;
-                }
-            }
-        }
-
-        // Guardamos o redireccionamos según corresponda
-        if ($clave_correcta) {
-            file_put_contents($archivo_usuarios, json_encode($usuarios, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-            header('Location: ../dashboard.php?msj=clave_actualizada');
-            exit;
-        } else {
-            header('Location: ../dashboard.php?error=clave_incorrecta');
-            exit;
+        } catch (PDOException $e) {
+            error_log("Error cambiando clave: " . $e->getMessage());
         }
     }
 }

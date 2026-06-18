@@ -11,18 +11,15 @@ $usuario_actual = $_SESSION['usuario'];
 $rol_actual = $_SESSION['rol'] ?? 'alumno';
 
 $nombre_alumno = '';
+require_once 'conexion.php';
+
 if ($rol_actual === 'tutor') {
     $nombre_alumno = trim($_POST['alumno_destino'] ?? '');
 } else {
-    $archivo_usuarios = __DIR__ . '/../data/usuarios.json';
-    $todos_usuarios = file_exists($archivo_usuarios) ? json_decode(file_get_contents($archivo_usuarios), true) : [];
-    $nombre_alumno = $usuario_actual; 
-    foreach ($todos_usuarios as $u) {
-        if ($u['usuario'] === $usuario_actual) {
-            $nombre_alumno = $u['nombre'];
-            break;
-        }
-    }
+    $stmt_u = $pdo->prepare("SELECT nombre FROM usuarios WHERE username = :user LIMIT 1");
+    $stmt_u->execute([':user' => $usuario_actual]);
+    $u = $stmt_u->fetch();
+    $nombre_alumno = $u ? $u['nombre'] : $usuario_actual;
 }
 
 $estado_subida = ''; // Variable que guarda el resultado para mostrar el cartel
@@ -61,29 +58,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_doc']) && !e
             $ruta_web = 'uploads/' . $nombre_archivo; 
 
             if (move_uploaded_file($archivo_tmp, $ruta_destino)) {
-                $archivo_docs = __DIR__ . '/../data/documentos.json';
-                $docs = file_exists($archivo_docs) ? json_decode(file_get_contents($archivo_docs), true) : [];
-
-                if (!isset($docs[$nombre_alumno])) $docs[$nombre_alumno] = [];
-
-                if ($tipo_doc === 'Certificado Médico / Justificación de Falta' || $tipo_doc === 'Permiso de Retiro') {
-                    if (!isset($docs[$nombre_alumno][$tipo_doc]) || !is_array($docs[$nombre_alumno][$tipo_doc])) {
-                        $docs[$nombre_alumno][$tipo_doc] = [];
+                try {
+                    $hoy = date('Y-m-d');
+                    if ($tipo_doc === 'Certificado Medico / Justificacion de Falta' || $tipo_doc === 'Permiso de Retiro') {
+                        // Verificamos que no haya ya uno para hoy
+                        $stmt_dup = $pdo->prepare("SELECT COUNT(*) FROM documentos WHERE alumno_nombre = :alumno AND tipo_doc = :tipo AND fecha = :hoy");
+                        $stmt_dup->execute([':alumno' => $nombre_alumno, ':tipo' => $tipo_doc, ':hoy' => $hoy]);
+                        if ($stmt_dup->fetchColumn() > 0) {
+                            $estado_subida = 'ya_existe_hoy';
+                        } else {
+                            $stmt_ins = $pdo->prepare("INSERT INTO documentos (alumno_nombre, tipo_doc, fecha, archivo, estado) VALUES (:alumno, :tipo, :fecha, :archivo, 'pendiente')");
+                            $stmt_ins->execute([':alumno' => $nombre_alumno, ':tipo' => $tipo_doc, ':fecha' => $hoy, ':archivo' => $ruta_web]);
+                            $estado_subida = 'exito';
+                        }
+                    } else {
+                        // Tipos simples: reemplazamos si ya existe uno para ese alumno y tipo
+                        $stmt_del = $pdo->prepare("DELETE FROM documentos WHERE alumno_nombre = :alumno AND tipo_doc = :tipo");
+                        $stmt_del->execute([':alumno' => $nombre_alumno, ':tipo' => $tipo_doc]);
+                        $stmt_ins = $pdo->prepare("INSERT INTO documentos (alumno_nombre, tipo_doc, fecha, archivo) VALUES (:alumno, :tipo, :fecha, :archivo)");
+                        $stmt_ins->execute([':alumno' => $nombre_alumno, ':tipo' => $tipo_doc, ':fecha' => $hoy, ':archivo' => $ruta_web]);
+                        $estado_subida = 'exito';
                     }
-                    $docs[$nombre_alumno][$tipo_doc][] = [
-                        'fecha' => date('d-m-Y H:i'),
-                        'archivo' => $ruta_web,
-                        'estado' => 'pendiente' // PARCHE LOGICO: Nace pendiente de revisión
-                    ];
-                } else {
-                    $docs[$nombre_alumno][$tipo_doc] = [
-                        'fecha' => date('d-m-Y'),
-                        'archivo' => $ruta_web
-                    ];
+                } catch (PDOException $e) {
+                    error_log("Error guardando documento: " . $e->getMessage());
+                    $estado_subida = 'error_mover';
                 }
-                file_put_contents($archivo_docs, json_encode($docs, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-                
-                $estado_subida = 'exito'; // Todo salió perfecto
             } else {
                 $estado_subida = 'error_mover';
             }

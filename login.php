@@ -8,41 +8,45 @@ if (isset($_SESSION['usuario'])) {
     exit;
 }
 
-$error = ""; // Variable para guardar el mensaje de error
+$error = ""; // Variable para guardar el mensaje de error en pantalla
 
 // Verificamos si alguien apretó el botón de "INGRESAR"
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // 1. Llamamos a nuestro puente de base de datos
+    require_once 'procesos/conexion.php'; 
+
     $usuario_ingresado = trim($_POST['usuario'] ?? '');
     $password_ingresada = trim($_POST['password'] ?? '');
 
-    $archivo_usuarios = __DIR__ . '/data/usuarios.json';
-    $usuarios_permitidos = [];
+    if (!empty($usuario_ingresado) && !empty($password_ingresada)) {
+        try {
+            // 2. Preparamos la consulta SQL de forma segura
+            $stmt = $pdo->prepare("SELECT id, username, password, rol FROM usuarios WHERE username = :username LIMIT 1");
+            $stmt->bindParam(':username', $usuario_ingresado, PDO::PARAM_STR);
+            $stmt->execute();
+            
+            $usuario_bd = $stmt->fetch();
 
-    // Levantamos los usuarios desde nuestro archivo JSON
-    if (file_exists($archivo_usuarios)) {
-        $usuarios_permitidos = json_decode(file_get_contents($archivo_usuarios), true) ?: [];
-    }
+            // 3. Verificamos si el usuario existe y desencriptamos su contraseña
+            if ($usuario_bd && password_verify($password_ingresada, $usuario_bd['password'])) {
+                
+                // ¡Éxito! Iniciamos la sesión oficial
+                $_SESSION['usuario_id'] = $usuario_bd['id'];
+                $_SESSION['usuario'] = $usuario_bd['username'];
+                $_SESSION['rol'] = $usuario_bd['rol'];
+                
+                header('Location: dashboard.php');
+                exit;
+            } else {
+                $error = "Usuario o contraseña incorrectos. Intentá de nuevo.";
+            }
 
-    $autenticado = false;
-
-    // Recorremos la lista del JSON buscando coincidencia
-    foreach ($usuarios_permitidos as $u) {
-        // Usamos password_verify para comparar el texto que escribió el usuario con el hash guardado
-        if (strtolower($usuario_ingresado) === strtolower($u['usuario']) && password_verify($password_ingresada, $u['password'])) {
-            // Guardamos el nombre oficial y el rol en la sesión
-            $_SESSION['usuario'] = $u['nombre'];
-            $_SESSION['rol'] = $u['rol']; // Guardamos el rol para futuras validaciones de seguridad
-            $autenticado = true;
-            break;
+        } catch (PDOException $e) {
+            $error = "Error de conexión con la base de datos.";
+            error_log("Error en el login: " . $e->getMessage());
         }
-    }
-
-    if ($autenticado) {
-        // Credenciales correctas, directo al panel
-        header('Location: dashboard.php');
-        exit;
     } else {
-        $error = "Usuario o contraseña incorrectos. Intentá de nuevo.";
+        $error = "Por favor completá todos los datos.";
     }
 }
 ?>
@@ -78,7 +82,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             width: 90%;
             border-top: 6px solid var(--azul-primario);
         }
-        /* Apuntamos a la nueva estructura de carpetas organizadas */
         img { width: 80px; margin-bottom: 20px; }
         h2 { color: var(--azul-primario); margin-bottom: 30px; }
         
@@ -125,10 +128,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <?php
         $logo_path = 'img/logo.png';
         if (!file_exists($logo_path)) {
-            // Buscar una imagen alternativa en la carpeta img
             $alternativas = glob(__DIR__ . '/img/*.{png,jpg,jpeg,jfif,gif}', GLOB_BRACE);
             if (!empty($alternativas)) {
-                // Tomamos la primera alternativa y convertimos a ruta relativa
                 $logo_path = 'img/' . basename($alternativas[0]);
             } else {
                 $logo_path = '';
@@ -157,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div id="caja-recuperacion" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed #ccc;">
             <p style="font-size: 0.9rem; color: #555; text-align: center; margin-bottom: 15px;">Ingresá tu nombre de usuario y solicitaremos el blanqueo a Preceptoría/Administración.</p>
             <form action="procesos/procesar_recuperacion.php" method="POST">
-                <input type="text" name="usuario_recuperar" placeholder="Tu usuario (ej: gmongelo)" required style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;">
+                <input type="text" name="usuario_recuperar" placeholder="Tu usuario (ej: admin)" required style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;">
                 <button type="submit" style="width: 100%; padding: 10px; background-color: #f15a24; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Solicitar Blanqueo</button>
             </form>
         </div>
@@ -175,7 +176,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 caja.style.display = caja.style.display === 'none' ? 'block' : 'none';
             });
         </script>
-
     </div>
 </body>
 </html>

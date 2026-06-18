@@ -1,6 +1,5 @@
-<?php
+﻿<?php
 session_start();
-// Configuramos el reloj del sistema para nuestra región
 date_default_timezone_set('America/Argentina/Buenos_Aires');
 
 if (!isset($_SESSION['usuario'])) {
@@ -8,142 +7,144 @@ if (!isset($_SESSION['usuario'])) {
     exit;
 }
 
+require_once __DIR__ . '/procesos/conexion.php';
+
 $usuario_actual = $_SESSION['usuario'];
+$rol_actual     = $_SESSION['rol'] ?? 'alumno';
 
-// Leemos el rol que nos pasó el login (si por algún motivo falla, lo mandamos a alumno por seguridad)
-$rol_actual = $_SESSION['rol'] ?? 'alumno'; 
+$es_profesor  = ($rol_actual === 'profesor');
+$es_admin     = ($rol_actual === 'admin');
+$es_alumno    = ($rol_actual === 'alumno');
+$es_preceptor = ($rol_actual === 'preceptor');
+$es_tutor     = ($rol_actual === 'tutor');
 
-// Ahora validamos por el ROL, sin importar cómo se llame la persona
-$es_profesor = ($rol_actual === 'profesor');
-$es_admin = ($rol_actual === 'admin');
-$es_alumno = ($rol_actual === 'alumno');
-$es_preceptor = ($rol_actual === 'preceptor'); 
-$es_tutor = ($rol_actual === 'tutor'); // ¡NUEVO ROL!
+// RECUPERACIONES DE CLAVES
+$todas_las_recuperaciones = [];
+try {
+    $todas_las_recuperaciones = $pdo->query("SELECT usuario, fecha FROM recuperaciones ORDER BY id DESC")->fetchAll();
+    foreach ($todas_las_recuperaciones as &$_rec) {
+        $ts_rec = $_rec['fecha'] ? strtotime($_rec['fecha']) : false;
+        $_rec['fecha'] = $ts_rec ? date('d/m/Y H:i', $ts_rec) : $_rec['fecha'];
+    }
+    unset($_rec);
+} catch (PDOException $e) {}
 
-// LÓGICA DE RECUPERACIÓN DE CLAVES
-$archivo_recuperaciones = __DIR__ . '/data/recuperaciones.json';
-$todas_las_recuperaciones = file_exists($archivo_recuperaciones) ? json_decode(file_get_contents($archivo_recuperaciones), true) : [];
-
-// 1. LÓGICA PARA LEER TODOS LOS USUARIOS PRIMERO
-$archivo_usuarios_lista = __DIR__ . '/data/usuarios.json';
-$todos_los_usuarios = [];
-$nombre_completo_actual = trim($usuario_actual); // Por defecto
-$mi_usuario_login = trim($usuario_actual); // Por defecto
-
-if (file_exists($archivo_usuarios_lista)) {
-    $todos_los_usuarios = json_decode(file_get_contents($archivo_usuarios_lista), true) ?: [];
-    foreach ($todos_los_usuarios as $usr) {
-        // MAGIA: Cruzamos datos. Si la sesión es "Gustavo Mongelo" (nombre) o "gmongelo" (login), lo unimos.
-        if (strtolower(trim($usr['usuario'])) === strtolower(trim($usuario_actual)) || 
-            strtolower(trim($usr['nombre'])) === strtolower(trim($usuario_actual))) {
-            
-            $nombre_completo_actual = trim($usr['nombre']); // Ej: Gustavo Mongelo
-            $mi_usuario_login = trim($usr['usuario']); // Ej: gmongelo
+// 1. TODOS LOS USUARIOS
+$todos_los_usuarios     = [];
+$nombre_completo_actual = trim($usuario_actual);
+$mi_usuario_login       = trim($usuario_actual);
+try {
+    $rows = $pdo->query("SELECT username as usuario, nombre, password, rol, dni, fecha_nacimiento, tutor_nombre, tutor_telefono, tutor_email FROM usuarios ORDER BY nombre ASC")->fetchAll();
+    $todos_los_usuarios = $rows;
+    foreach ($rows as $usr) {
+        if (strtolower(trim($usr['usuario'])) === strtolower(trim($usuario_actual)) ||
+            strtolower(trim($usr['nombre']))  === strtolower(trim($usuario_actual))) {
+            $nombre_completo_actual = trim($usr['nombre']);
+            $mi_usuario_login       = trim($usr['usuario']);
             break;
         }
     }
-}
+} catch (PDOException $e) {}
 
-// 2. MAGIA DE TUTORES: El hilo invisible
-$archivo_tutores = __DIR__ . '/data/tutores_alumnos.json';
-$mis_tutelados = [];
-$alumno_seleccionado = ''; 
-
-if (file_exists($archivo_tutores)) {
-    $mapa_tutores = json_decode(file_get_contents($archivo_tutores), true) ?: [];
-    
-    if ($es_tutor) {
-        // BÚSQUEDA SÚPER INTELIGENTE DEFINITIVA
-        foreach ($mapa_tutores as $tutor_key => $lista_hijos) {
-            $llave_limpia = strtolower(trim($tutor_key));
-            
-            // Ahora comparamos contra las dos identidades (Nombre y Login)
-            if ($llave_limpia === strtolower($mi_usuario_login) || 
-                $llave_limpia === strtolower($nombre_completo_actual) ||
-                $llave_limpia === strtolower(trim($usuario_actual))) {
-                
-                $mis_tutelados = $lista_hijos;
-                break;
-            }
-        }
-        
-        // --- MAGIA: Leemos si el tutor cambió de hijo ---
+// 2. TUTORES
+$mis_tutelados       = [];
+$alumno_seleccionado = '';
+if ($es_tutor) {
+    try {
+        $stmt_t = $pdo->prepare("SELECT alumno_nombre FROM tutores_alumnos WHERE tutor_username = :u");
+        $stmt_t->execute([':u' => $mi_usuario_login]);
+        $mis_tutelados = $stmt_t->fetchAll(PDO::FETCH_COLUMN);
         if (!empty($mis_tutelados)) {
             if (isset($_GET['hijo']) && in_array($_GET['hijo'], $mis_tutelados)) {
                 $alumno_seleccionado = $_GET['hijo'];
             } else {
-                $alumno_seleccionado = $mis_tutelados[0] ?? ''; // Primer hijo por defecto
+                $alumno_seleccionado = $mis_tutelados[0];
             }
         }
-    }
+    } catch (PDOException $e) {}
 }
 
-// Generamos la etiqueta visual y "engañamos" al sistema
-$etiqueta_perfil = $nombre_completo_actual; // Guardamos su nombre real para el diseño
-
+$etiqueta_perfil = $nombre_completo_actual;
 if ($es_tutor && !empty($alumno_seleccionado)) {
-    $etiqueta_perfil = "Tutor de " . $alumno_seleccionado;
-    // HACK: Reemplazamos su nombre por el del hijo para que TODAS las consultas busquen al alumno
-    $nombre_completo_actual = $alumno_seleccionado; 
+    $etiqueta_perfil        = "Tutor de " . $alumno_seleccionado;
+    $nombre_completo_actual = $alumno_seleccionado;
 }
 
-// 2.5 CREAMOS LAS INICIALES CON EL NOMBRE
-$palabras = explode(" ", $etiqueta_perfil);
+$palabras  = explode(" ", $etiqueta_perfil);
 $iniciales = "";
 foreach ($palabras as $p) {
-    if (!empty($p) && ctype_alpha(mb_substr($p, 0, 1))) {
-        $iniciales .= mb_substr($p, 0, 1);
-    }
+    if (!empty($p) && ctype_alpha(mb_substr($p, 0, 1))) $iniciales .= mb_substr($p, 0, 1);
 }
 $iniciales = strtoupper(mb_substr($iniciales, 0, 2));
 
-// 3. LÓGICA PARA ASIGNACIONES DE PROFESORES Y PRECEPTORES
-$archivo_asignaciones = __DIR__ . '/data/asignaciones.json';
-$mis_cursos = [];
-$asignaciones_totales = []; 
-
-if (file_exists($archivo_asignaciones)) {
-    $asignaciones_totales = json_decode(file_get_contents($archivo_asignaciones), true) ?: [];
-    
-    // Extraemos sus cursos asignados (Funciona igual para Profes y Preceptores)
+// 3. ASIGNACIONES DE PROFESORES Y PRECEPTORES
+$mis_cursos           = [];
+$asignaciones_totales = [];
+$es_maestro_primaria  = false;
+try {
+    $rows_cat = $pdo->query("SELECT docente_nombre, nivel, curso, division, materia FROM catedras ORDER BY docente_nombre, curso")->fetchAll();
+    foreach ($rows_cat as $row) {
+        $asignaciones_totales[$row['docente_nombre']][] = [
+            'curso'    => $row['curso'],
+            'division' => $row['division'],
+            'materia'  => $row['materia'],
+            'nivel'    => $row['nivel'],
+        ];
+    }
     if (($es_profesor || $es_preceptor) && isset($asignaciones_totales[$nombre_completo_actual])) {
         $mis_cursos = $asignaciones_totales[$nombre_completo_actual];
-    }
-}
-
-// Averiguamos si es un Maestro de Primaria
-$es_maestro_primaria = false;
-if ($es_profesor) {
-    foreach ($mis_cursos as $c) {
-        if (($c['nivel'] ?? '') === 'primaria') {
-            $es_maestro_primaria = true;
-            break;
+        foreach ($mis_cursos as $c) {
+            if (($c['nivel'] ?? '') === 'primaria') { $es_maestro_primaria = true; break; }
         }
     }
-}
+} catch (PDOException $e) {}
 
-// LÓGICA DE ASISTENCIAS 
-$archivo_asistencias = __DIR__ . '/data/asistencias.json';
-$todas_asistencias = file_exists($archivo_asistencias) ? json_decode(file_get_contents($archivo_asistencias), true) : [];
+// ASISTENCIAS
+$todas_asistencias = [];
+try {
+    $rows_as = $pdo->query("SELECT alumno_nombre, curso_clave, fecha, estado FROM asistencias")->fetchAll();
+    foreach ($rows_as as $row) {
+        $todas_asistencias[$row['curso_clave']][$row['fecha']][$row['alumno_nombre']] = $row['estado'];
+    }
+} catch (PDOException $e) {}
 
-// 4. LÓGICA PARA CARGAR ALUMNOS POR CURSO  
-$archivo_alumnos_cursos = __DIR__ . '/data/alumnos_cursos.json';
+// 4. ALUMNOS POR CURSO
 $alumnos_por_curso = [];
-if (file_exists($archivo_alumnos_cursos)) {
-    $alumnos_por_curso = json_decode(file_get_contents($archivo_alumnos_cursos), true) ?: [];
-}
-// 5. CALIFICACIONES Y DESCUBRIMIENTO DE MATERIAS
-$archivo_notas = __DIR__ . '/data/calificaciones.json';
-$mis_materias = [];
-$todas_las_notas = []; 
+try {
+    $rows_mat = $pdo->query("SELECT alumno_nombre, curso_clave FROM matricula ORDER BY alumno_nombre ASC")->fetchAll();
+    foreach ($rows_mat as $row) {
+        $alumnos_por_curso[$row['curso_clave']][] = $row['alumno_nombre'];
+    }
+} catch (PDOException $e) {}
 
-if (file_exists($archivo_notas)) {
-    $contenido = file_get_contents($archivo_notas);
-    $todas_las_notas = json_decode($contenido, true) ?: [];
-}
+// TUTORES (para asignación en panel admin)
+$tutores_sistema  = []; // [username => nombre]
+$tutor_por_alumno = []; // [alumno_nombre => tutor_username]
+try {
+    foreach ($todos_los_usuarios as $u) {
+        if (($u['rol'] ?? '') === 'tutor') $tutores_sistema[$u['usuario']] = $u['nombre'];
+    }
+    $rows_ta = $pdo->query("SELECT tutor_username, alumno_nombre FROM tutores_alumnos")->fetchAll();
+    foreach ($rows_ta as $row) {
+        $tutor_por_alumno[$row['alumno_nombre']] = $row['tutor_username'];
+    }
+} catch (PDOException $e) {}
+
+// 5. CALIFICACIONES
+$mis_materias    = [];
+$todas_las_notas = [];
+try {
+    $rows_cal = $pdo->query("SELECT alumno_nombre, materia, nombre_examen as nombre, nota, DATE_FORMAT(fecha_carga,'%d/%m/%Y') as fecha FROM calificaciones ORDER BY alumno_nombre, materia, id")->fetchAll();
+    foreach ($rows_cal as $row) {
+        $todas_las_notas[$row['alumno_nombre']][$row['materia']][] = [
+            'nombre' => $row['nombre'],
+            'nota'   => $row['nota'],
+            'fecha'  => $row['fecha'],
+        ];
+    }
+} catch (PDOException $e) {}
 
 if ($es_alumno || $es_tutor) {
-    // A. ¿En qué cursos está el alumno?
     $mis_cursos_alumno = [];
     foreach ($alumnos_por_curso as $clave_curso => $lista_alumnos) {
         foreach ($lista_alumnos as $al) {
@@ -153,46 +154,33 @@ if ($es_alumno || $es_tutor) {
         }
     }
 
-    // B. Recopilar materias base de esos cursos
-    // B. Recopilar materias base de esos cursos
     $materias_descubiertas = [];
-    if (file_exists(__DIR__ . '/data/asignaciones.json')) {
-        $asig_totales = json_decode(file_get_contents(__DIR__ . '/data/asignaciones.json'), true) ?: [];
-        foreach ($asig_totales as $prof => $cursos_prof) {
-            foreach ($cursos_prof as $c) {
-                $clave_c = $c['curso'] . "_" . $c['division'];
-                if (in_array($clave_c, $mis_cursos_alumno)) {
-                    $mat = trim($c['materia']);
-                    
-                    // MAGIA: Evitamos agregar la etiqueta administrativa como si fuera una materia
-                    if ($mat !== 'Maestro/a de Grado' && !in_array($mat, $materias_descubiertas)) {
-                        $materias_descubiertas[] = $mat;
-                    }
+    foreach ($asignaciones_totales as $prof => $cursos_prof) {
+        foreach ($cursos_prof as $c) {
+            $clave_c = $c['curso'] . "_" . $c['division'];
+            if (in_array($clave_c, $mis_cursos_alumno)) {
+                $mat = trim($c['materia']);
+                if ($mat !== 'Maestro/a de Grado' && !in_array($mat, $materias_descubiertas)) {
+                    $materias_descubiertas[] = $mat;
                 }
             }
         }
     }
 
-    // C. Rellenar las grillas completas según el nivel
     foreach ($mis_cursos_alumno as $mc) {
-        // Si es de Primaria, sumamos su paquete de materias
         if (strpos($mc, 'grado') !== false) {
-            $materias_descubiertas = array_merge($materias_descubiertas, ['Lengua', 'Matemática', 'Ciencias Naturales', 'Ciencias Sociales', 'Educación Física', 'Música', 'Plástica', 'Inglés']);
+            $materias_descubiertas = array_merge($materias_descubiertas, ['Lengua', 'Matemática', 'Ciencias Naturales', 'Ciencias Sociales', 'Educacion Fisica', 'Musica', 'Plastica', 'Ingles']);
         }
-        
-        // ¡NUEVO! Si es de Secundaria (contiene '_anio'), inyectamos todo su plan de estudios
         if (strpos($mc, 'anio') !== false) {
-            $materias_descubiertas = array_merge($materias_descubiertas, ['Literatura', 'Matemática', 'Física', 'Historia', 'Biología', 'Geografía', 'Inglés', 'Educación Física', 'Educación Tecnológica', 'Construcción Ciudadana', 'Contabilidad']);
+            $materias_descubiertas = array_merge($materias_descubiertas, ['Literatura', 'Matemática', 'Fisica', 'Historia', 'Biologia', 'Geografia', 'Ingles', 'Educacion Fisica', 'Educacion Tecnologica', 'Construccion Ciudadana', 'Contabilidad']);
         }
     }
     $materias_descubiertas = array_unique($materias_descubiertas);
 
-    // D. Inicializar en vacío para que muestre "0 instancias evaluadas" por defecto
     foreach ($materias_descubiertas as $m) {
         $mis_materias[$m] = [];
     }
 
-    // E. Acoplamos las notas reales que ya existan en calificaciones.json
     foreach ($todas_las_notas as $k_alumno => $materias) {
         if (strtolower(trim($k_alumno)) === strtolower(trim($nombre_completo_actual))) {
             foreach ($materias as $nom_mat => $examenes) {
@@ -203,145 +191,185 @@ if ($es_alumno || $es_tutor) {
     }
 }
 
-// LÓGICA PARA ENTREVISTAS DE ADMISIÓN (CON AUTOLIMPIEZA)
-$archivo_entrevistas = __DIR__ . '/data/entrevistas.json';
+// ENTREVISTAS DE ADMISION
 $todas_las_entrevistas = [];
-$hubo_limpieza = false;
-
-if (file_exists($archivo_entrevistas)) {
-    $todas_las_entrevistas = json_decode(file_get_contents($archivo_entrevistas), true) ?: [];
-    
-    foreach ($todas_las_entrevistas as $key => $ent) {
+try {
+    $stmt_e = $pdo->query("SELECT id, SUBSTRING_INDEX(nombre_tutor, ' (Padre de ', 1) as tutor, nombre_tutor as nombre, email, telefono, SUBSTRING_INDEX(nivel_interes, ' | Disp: ', -1) as disponibilidad, SUBSTRING_INDEX(nivel_interes, ' | Disp: ', 1) as nivel, TRIM(TRAILING ')' FROM SUBSTRING_INDEX(nombre_tutor, ' (Padre de ', -1)) as alumno, dni_tutor as dni_alumno, fecha_nacimiento_alumno, estado, fecha_entrevista as fecha_agendada, hora_entrevista as hora_agendada, DATE_FORMAT(fecha_creacion,'%d/%m/%Y') as fecha_solicitud FROM admisiones ORDER BY id DESC");
+    foreach ($stmt_e->fetchAll() as $ent) {
         if ($ent['estado'] === 'agendada') {
-            // Unimos fecha y hora y lo convertimos a "tiempo máquina"
-            $fecha_hora_entrevista = strtotime($ent['fecha_agendada'] . ' ' . $ent['hora_agendada']);
-            
-            // Si el tiempo actual superó por 24hs (86400 segundos) a la cita, la borramos
-            if (time() > ($fecha_hora_entrevista + 86400)) {
-                unset($todas_las_entrevistas[$key]);
-                $hubo_limpieza = true;
+            $fh = strtotime($ent['fecha_agendada'] . ' ' . $ent['hora_agendada']);
+            if (time() > ($fh + 86400)) {
+                $pdo->prepare("DELETE FROM admisiones WHERE id = :id")->execute([':id' => $ent['id']]);
+                continue;
             }
         }
+        $todas_las_entrevistas[] = $ent;
     }
-    
-    // Si borró alguna, guardamos el archivo actualizado sin molestar al usuario
-    if ($hubo_limpieza) {
-        $todas_las_entrevistas = array_values($todas_las_entrevistas); // Reordenar
-        file_put_contents($archivo_entrevistas, json_encode($todas_las_entrevistas, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-    }
-}
-// LÓGICA PARA EL MENÚ DEL COMEDOR 
-$archivo_menu = __DIR__ . '/data/menu.json';
-$menu_hoy = [
-    "plato_principal" => "No cargado",
-    "opcion_vegetariana" => "No cargado",
-    "postre" => "No cargado"
-];
+} catch (PDOException $e) {}
 
-if (file_exists($archivo_menu)) {
-    $menu_hoy = json_decode(file_get_contents($archivo_menu), true) ?: $menu_hoy;
-}
+// MENU DEL COMEDOR
+$menu_hoy = ["plato_principal" => "No cargado", "opcion_vegetariana" => "No cargado", "postre" => "No cargado"];
+try {
+    $row_menu = $pdo->query("SELECT plato_principal, opcion_vegetariana, postre FROM menu_comedor LIMIT 1")->fetch();
+    if ($row_menu) $menu_hoy = $row_menu;
+} catch (PDOException $e) {}
 
-// LÓGICA PARA TALLERES Y DEPORTES (NUEVA VERSIÓN DINÁMICA)
-$archivo_talleres_din = __DIR__ . '/data/talleres_dinamicos.json';
+// TALLERES
 $todos_los_talleres = [];
-if (file_exists($archivo_talleres_din)) {
-    $todos_los_talleres = json_decode(file_get_contents($archivo_talleres_din), true) ?: [];
-}
+try {
+    $todos_los_talleres = $pdo->query("SELECT id, titulo, nivel, fecha, hora, lugar FROM talleres ORDER BY fecha ASC")->fetchAll();
+    $rows_ti = $pdo->query("SELECT taller_id, alumno_nombre FROM taller_inscriptos")->fetchAll();
+    $insc_taller_map = [];
+    foreach ($rows_ti as $r) $insc_taller_map[$r['taller_id']][] = $r['alumno_nombre'];
+    foreach ($todos_los_talleres as &$t) $t['inscriptos'] = $insc_taller_map[$t['id']] ?? [];
+    unset($t);
+} catch (PDOException $e) {}
 
-$archivo_talleres = __DIR__ . '/data/talleres.json';
 $mis_talleres = [];
+try {
+    $stmt_mt = $pdo->prepare("SELECT t.titulo FROM taller_inscriptos ti JOIN talleres t ON ti.taller_id = t.id WHERE ti.alumno_nombre = :n");
+    $stmt_mt->execute([':n' => $nombre_completo_actual]);
+    $mis_talleres = $stmt_mt->fetchAll(PDO::FETCH_COLUMN);
+} catch (PDOException $e) {}
 
-// Leemos en qué talleres está anotado el usuario actual
-if (file_exists($archivo_talleres)) {
-    $datos_talleres = json_decode(file_get_contents($archivo_talleres), true);
-    // Si los datos son válidos y el usuario tiene talleres
-    if (is_array($datos_talleres) && isset($datos_talleres[$usuario_actual])) {
-        $mis_talleres = $datos_talleres[$usuario_actual];
+// ACTIVIDADES
+$todas_las_actividades = [];
+try {
+    $todas_las_actividades = $pdo->query("SELECT id, profesor, curso, division, materia, titulo, descripcion, fecha_limite, archivo_adjunto FROM actividades ORDER BY id DESC")->fetchAll();
+    $rows_ent = $pdo->query("SELECT actividad_id, alumno_nombre, texto, archivo, fecha, devolucion, nota FROM actividad_entregas")->fetchAll();
+    $entregas_map = [];
+    foreach ($rows_ent as $r) {
+        $ts_e = $r['fecha'] ? strtotime($r['fecha']) : false;
+        $entregas_map[$r['actividad_id']][$r['alumno_nombre']] = [
+            'texto'      => $r['texto'],
+            'archivo'    => $r['archivo'],
+            'fecha'      => $ts_e ? date('d/m/Y H:i', $ts_e) : $r['fecha'],
+            'devolucion' => $r['devolucion'],
+            'nota'       => $r['nota'],
+        ];
     }
-}
+    foreach ($todas_las_actividades as &$a) $a['entregas'] = $entregas_map[$a['id']] ?? [];
+    unset($a);
+} catch (PDOException $e) {}
 
-// LÓGICA DE ASISTENCIAS 
-$archivo_asistencias = __DIR__ . '/data/asistencias.json';
-$todas_asistencias = file_exists($archivo_asistencias) ? json_decode(file_get_contents($archivo_asistencias), true) : [];
-
-// LÓGICA DE ACTIVIDADES (NUEVO)
-$archivo_actividades = __DIR__ . '/data/actividades.json';
-$todas_las_actividades = file_exists($archivo_actividades) ? json_decode(file_get_contents($archivo_actividades), true) : [];
-
-
-//LÓGICA PARA RESERVAS DE ESPACIOS 
-$archivo_reservas = __DIR__ . '/data/reservas.json';
+// RESERVAS
 $todas_las_reservas = [];
-if (file_exists($archivo_reservas)) {
-    $todas_las_reservas = json_decode(file_get_contents($archivo_reservas), true) ?: [];
-}
+try {
+    $todas_las_reservas = $pdo->query("SELECT id, espacio, fecha, modulo, profesor FROM reservas ORDER BY fecha ASC")->fetchAll();
+} catch (PDOException $e) {}
 
-// LÓGICA PARA DOCUMENTACIÓN 
-$archivo_docs = __DIR__ . '/data/documentos.json';
-$mis_documentos = [];
-$todos_los_documentos = []; // <--- ¡Lo hacemos global!
-
-$tipos_permitidos = [
+// DOCUMENTOS
+$mis_documentos       = [];
+$todos_los_documentos = [];
+$tipos_permitidos     = [
     'DNI del Alumno',
-    'Apto Físico',
+    'Apto Fisico',
     'Partida de Nacimiento',
     'Permiso de Retiro',
-    'Certificado Médico / Justificación de Falta'
+    'Certificado Medico / Justificacion de Falta'
 ];
-
-if (file_exists($archivo_docs)) {
-    $todos_los_documentos = json_decode(file_get_contents($archivo_docs), true) ?: [];
+try {
+    $rows_doc = $pdo->query("SELECT id, alumno_nombre, tipo_doc, fecha, archivo, estado FROM documentos ORDER BY alumno_nombre, tipo_doc")->fetchAll();
+    foreach ($rows_doc as $row) {
+        $tipo   = $row['tipo_doc'];
+        $alumno = $row['alumno_nombre'];
+        $ts = $row['fecha'] ? strtotime(explode(' ', $row['fecha'])[0]) : false;
+        $entry  = ['id' => $row['id'], 'fecha' => ($ts ? date('d/m/Y', $ts) : ''), 'fecha_raw' => $row['fecha'], 'archivo' => $row['archivo'], 'estado' => $row['estado']];
+        if ($tipo === 'Certificado Medico / Justificacion de Falta' || $tipo === 'Permiso de Retiro') {
+            $todos_los_documentos[$alumno][$tipo][] = $entry;
+        } else {
+            $todos_los_documentos[$alumno][$tipo] = $entry;
+        }
+    }
     if (isset($todos_los_documentos[$nombre_completo_actual])) {
         $mis_documentos = $todos_los_documentos[$nombre_completo_actual];
     }
-}
+} catch (PDOException $e) {}
 
-// LÓGICA PARA CAPACITACIONES DOCENTES (NUEVA VERSIÓN DINÁMICA)
-$archivo_cap = __DIR__ . '/data/capacitaciones.json';
-$todas_las_capacitaciones = [];
-if (file_exists($archivo_cap)) {
-    $todas_las_capacitaciones = json_decode(file_get_contents($archivo_cap), true) ?: [];
-}
-
-// LÓGICA DEL SIMULADOR DE CORREOS
-$archivo_correos = __DIR__ . '/data/correos.json';
-$todos_los_correos = file_exists($archivo_correos) ? json_decode(file_get_contents($archivo_correos), true) : [];
-
-// LÓGICA DE RECURSOS HUMANOS (CON AUTOLIMPIEZA Y BORRADO DE PDFs)
-$archivo_postulaciones = __DIR__ . '/data/postulaciones.json';
-$todas_las_postulaciones = [];
-$hubo_limpieza_rrhh = false;
-
-if (file_exists($archivo_postulaciones)) {
-    $todas_las_postulaciones = json_decode(file_get_contents($archivo_postulaciones), true) ?: [];
-    
-    foreach ($todas_las_postulaciones as $key => $post) {
-        if ($post['estado'] === 'agendada') {
-            $fecha_hora_entrevista = strtotime($post['fecha_entrevista'] . ' ' . $post['hora_entrevista']);
-            
-            // Si pasaron 24hs (86400 segundos) de la cita, borramos el registro
-            if (time() > ($fecha_hora_entrevista + 86400)) {
-                
-                // ¡Súper importante! Borramos el archivo PDF físico del servidor
-                if (!empty($post['cv']) && file_exists(__DIR__ . '/' . $post['cv'])) {
-                    unlink(__DIR__ . '/' . $post['cv']);
-                }
-                
-                unset($todas_las_postulaciones[$key]);
-                $hubo_limpieza_rrhh = true;
-            }
+// Fechas con certificado aprobado (para filtrar faltas injustificadas)
+$fechas_cert_aprobado = [];
+if (isset($mis_documentos['Certificado Medico / Justificacion de Falta'])) {
+    foreach ($mis_documentos['Certificado Medico / Justificacion de Falta'] as $doc) {
+        if (($doc['estado'] ?? '') === 'aprobado' && !empty($doc['fecha_raw'])) {
+            $ts = strtotime(explode(' ', $doc['fecha_raw'])[0]);
+            if ($ts) $fechas_cert_aprobado[] = date('Y-m-d', $ts);
         }
     }
-    
-    // Guardamos el JSON limpio sin molestar al usuario
-    if ($hubo_limpieza_rrhh) {
-        $todas_las_postulaciones = array_values($todas_las_postulaciones);
-        file_put_contents($archivo_postulaciones, json_encode($todas_las_postulaciones, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-    }
 }
-?>
 
+// CAPACITACIONES
+$todas_las_capacitaciones = [];
+try {
+    $todas_las_capacitaciones = $pdo->query("SELECT id, titulo, fecha, hora, lugar FROM capacitaciones ORDER BY fecha ASC")->fetchAll();
+    $rows_ci = $pdo->query("SELECT cap_id, docente_nombre FROM cap_inscriptos")->fetchAll();
+    $insc_cap_map = [];
+    foreach ($rows_ci as $r) $insc_cap_map[$r['cap_id']][] = $r['docente_nombre'];
+    foreach ($todas_las_capacitaciones as &$c) $c['inscriptos'] = $insc_cap_map[$c['id']] ?? [];
+    unset($c);
+} catch (PDOException $e) {}
+
+
+// RRHH POSTULACIONES
+$todas_las_postulaciones = [];
+try {
+    $stmt_viejas = $pdo->query("SELECT id, ruta_cv FROM rrhh_postulaciones WHERE estado = 'agendada' AND TIMESTAMP(fecha_entrevista, hora_entrevista) < (NOW() - INTERVAL 24 HOUR)");
+    foreach ($stmt_viejas->fetchAll() as $old) {
+        if (!empty($old['ruta_cv']) && file_exists(__DIR__ . '/' . $old['ruta_cv'])) unlink(__DIR__ . '/' . $old['ruta_cv']);
+    }
+    $pdo->exec("DELETE FROM rrhh_postulaciones WHERE estado = 'agendada' AND TIMESTAMP(fecha_entrevista, hora_entrevista) < (NOW() - INTERVAL 24 HOUR)");
+    $todas_las_postulaciones = $pdo->query("SELECT id, nombre_completo as nombre, email, telefono, area_interes as area, ruta_cv as cv, estado, fecha_entrevista, hora_entrevista, DATE_FORMAT(fecha_creacion,'%d/%m/%Y') as fecha_solicitud FROM rrhh_postulaciones ORDER BY id DESC")->fetchAll();
+} catch (PDOException $e) {}
+
+// SISTEMA DE TOASTS
+$_toast_map = [
+    'clave_actualizada'      => ['tipo' => 'success', 'texto' => '¡Tu contraseña se ha actualizado correctamente!'],
+    'alumno_asignado'        => ['tipo' => 'success', 'texto' => 'Estudiante matriculado y asignado al curso correctamente.'],
+    'reservado'              => ['tipo' => 'success', 'texto' => '¡Tu reserva ha sido confirmada y agendada con éxito!'],
+    'usuario_creado'         => ['tipo' => 'success', 'texto' => '¡Usuario registrado con éxito en el sistema!'],
+    'entrevista_agendada'    => ['tipo' => 'success', 'texto' => 'Entrevista agendada correctamente.'],
+    'entrevista_modificada'  => ['tipo' => 'info',    'texto' => 'Fecha y hora de la entrevista actualizadas correctamente.'],
+    'postulacion_agendada'   => ['tipo' => 'success', 'texto' => 'Convocatoria agendada y correo enviado al postulante.'],
+    'postulacion_modificada' => ['tipo' => 'info',    'texto' => 'Entrevista laboral reprogramada y notificada con éxito.'],
+    'usuario_modificado'     => ['tipo' => 'info',    'texto' => '¡Credenciales actualizadas con éxito!'],
+    'asistencia_guardada'    => ['tipo' => 'success', 'texto' => 'Asistencia del día guardada correctamente.'],
+    'usuario_eliminado'      => ['tipo' => 'info',    'texto' => 'El usuario ha sido removido por completo del sistema.'],
+    'entrevista_eliminada'   => ['tipo' => 'info',    'texto' => 'La solicitud de entrevista fue cancelada y eliminada.'],
+    'postulacion_eliminada'  => ['tipo' => 'info',    'texto' => 'Currículum y postulación eliminados del servidor.'],
+    'alumno_removido'        => ['tipo' => 'info',    'texto' => 'Estudiante removido del curso con éxito.'],
+    'eliminado'              => ['tipo' => 'info',    'texto' => 'La reserva fue cancelada y el espacio vuelve a estar disponible.'],
+    'clave_incorrecta'       => ['tipo' => 'error',   'texto' => 'La contraseña actual ingresada es incorrecta. No se realizaron cambios.'],
+    'duplicado'              => ['tipo' => 'error',   'texto' => 'El nombre de usuario ya se encuentra registrado. Elegí otro.'],
+    'ocupado'                => ['tipo' => 'error',   'texto' => '¡El espacio ya está reservado en ese día y módulo. Elegí otro horario.'],
+];
+$toast = null;
+$_msj  = $_GET['msj']   ?? '';
+$_err  = $_GET['error'] ?? '';
+if ($_msj && isset($_toast_map[$_msj]))       $toast = $_toast_map[$_msj];
+elseif ($_err && isset($_toast_map[$_err]))   $toast = $_toast_map[$_err];
+if (isset($_GET['subida'])) {
+    $s = $_GET['subida'];
+    if ($s === 'exito')               $toast = ['tipo' => 'success', 'texto' => 'Documento subido y guardado correctamente.'];
+    elseif ($s === 'ya_existe_hoy')   $toast = ['tipo' => 'warning',  'texto' => 'Ya subiste un certificado médico hoy. Solo se permite uno por día.'];
+    elseif ($s === 'error_seguridad') $toast = ['tipo' => 'error',   'texto' => 'Archivo rechazado por seguridad. Solo se permiten .PDF, .JPG o .PNG.'];
+    else                              $toast = ['tipo' => 'warning',  'texto' => 'Hubo un error al procesar el archivo. Puede ser demasiado pesado.'];
+}
+
+// ESTADISTICAS PARA VISTA-HOME
+$stat_total_alumnos  = count(array_filter($todos_los_usuarios, fn($u) => $u['rol'] === 'alumno'));
+$stat_total_docentes = count(array_filter($todos_los_usuarios, fn($u) => in_array($u['rol'], ['profesor', 'preceptor'])));
+$stat_total_usuarios = count($todos_los_usuarios);
+$stat_entrev_pend    = count(array_filter($todas_las_entrevistas, fn($e) => $e['estado'] === 'pendiente'));
+$stat_post_pend      = count(array_filter($todas_las_postulaciones, fn($p) => $p['estado'] === 'pendiente'));
+$stat_talleres_act   = count($todos_los_talleres);
+$stat_mis_alumnos    = 0;
+foreach ($mis_cursos as $c) {
+    $clave_h = $c['curso'] . '_' . $c['division'];
+    $stat_mis_alumnos += count($alumnos_por_curso[$clave_h] ?? []);
+}
+$stat_mis_materias = count($mis_materias);
+$stat_mis_notas    = array_sum(array_map('count', $mis_materias));
+$stat_mis_docs     = count(array_filter($mis_documentos, fn($d) => !empty($d)));
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -750,6 +778,8 @@ if (file_exists($archivo_postulaciones)) {
         #vista-actividades .btn-nuevo { background-color: var(--rosa); }
         .nav-item[data-vista="vista-rrhh"].menu-activo { color: var(--rosa); border-right: 4px solid var(--rosa); }
         #vista-rrhh .stat-card { border-left-color: var(--rosa); }
+        .nav-item[data-vista="vista-historial-calificaciones"].menu-activo { color: var(--verde); border-right: 4px solid var(--verde); }
+        #vista-historial-calificaciones .stat-card { border-left-color: var(--verde); }
         /* --- ESTILOS DEL ACORDEÓN DE CALIFICACIONES --- */
         .acordeon-materia {
             background: white;
@@ -957,6 +987,41 @@ if (file_exists($archivo_postulaciones)) {
         @media (min-width: 769px) {
             .mobile-top-bar { display: none; }
         }
+
+        /* --- TOAST NOTIFICATIONS --- */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { min-width: 280px; max-width: 380px; padding: 14px 18px; border-radius: 10px; font-size: 0.9rem; font-weight: 600; color: white; box-shadow: 0 6px 20px rgba(0,0,0,0.15); animation: toastIn 0.35s ease forwards; pointer-events: auto; }
+        .toast.saliendo { animation: toastOut 0.35s ease forwards; }
+        .toast-success { background: #2e7d32; }
+        .toast-error   { background: #c62828; }
+        .toast-info    { background: var(--azul-primario); }
+        .toast-warning { background: #e65100; }
+        @keyframes toastIn  { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+        @keyframes toastOut { from { opacity:1; transform:translateX(0); }    to { opacity:0; transform:translateX(40px); } }
+
+        /* --- CONFIRM MODAL --- */
+        #confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 99998; justify-content: center; align-items: center; }
+        #confirm-overlay.activo { display: flex; }
+        #confirm-box { background: white; border-radius: 14px; padding: 32px 28px; max-width: 380px; width: 90%; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,0.2); }
+        #confirm-box .confirm-icon { font-size: 2.2rem; margin-bottom: 12px; }
+        #confirm-box .confirm-msg  { font-size: 1rem; color: #333; margin-bottom: 24px; line-height: 1.5; }
+        #confirm-box .confirm-btns { display: flex; gap: 12px; justify-content: center; }
+        #btn-confirm-ok     { padding: 10px 28px; border-radius: 8px; font-size: 0.95rem; font-weight: 700; border: none; cursor: pointer; background: var(--naranja); color: white; transition: 0.15s; }
+        #btn-confirm-ok:hover { background: #d44e1c; }
+        #btn-confirm-cancel { padding: 10px 28px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; border: 1px solid #ddd; cursor: pointer; background: white; color: #555; transition: 0.15s; }
+        #btn-confirm-cancel:hover { background: #f5f5f5; }
+
+        /* --- VISTA HOME --- */
+        .home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .home-card { background: white; border-radius: 14px; padding: 24px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 5px solid var(--azul-primario); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+        .home-card .hc-icon  { font-size: 1.8rem; }
+        .home-card .hc-num   { font-size: 2.4rem; font-weight: 800; color: var(--azul-primario); line-height: 1; }
+        .home-card .hc-label { font-size: 0.82rem; color: #777; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .home-card.verde   { border-left-color: var(--verde);   } .home-card.verde   .hc-num { color: var(--verde);   }
+        .home-card.naranja { border-left-color: var(--naranja); } .home-card.naranja .hc-num { color: var(--naranja); }
+        .home-card.celeste { border-left-color: var(--celeste); } .home-card.celeste .hc-num { color: var(--celeste); }
+        .home-card.violeta { border-left-color: var(--violeta); } .home-card.violeta .hc-num { color: var(--violeta); }
+        .home-card.rosa    { border-left-color: var(--rosa);    } .home-card.rosa    .hc-num { color: var(--rosa);    }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -997,23 +1062,15 @@ if (file_exists($archivo_postulaciones)) {
                 <span style="color: var(--naranja); font-size: 0.85rem; font-weight: bold;">⚠️ Sin hijos asignados</span>
                 <p style="font-size: 0.8rem; color: #666; margin-top: 5px; margin-bottom: 0;">Este perfil no tiene alumnos vinculados.</p>
                 
-                <div style="background: #222; color: #0f0; padding: 10px; margin-top: 15px; border-radius: 4px; font-family: monospace; font-size: 0.7rem; overflow-wrap: break-word;">
-                    <strong>🕵️ DIAGNÓSTICO:</strong><br>
-                    Sesión PHP: [<?php echo htmlspecialchars($usuario_actual); ?>]<br>
-                    Nombre Perfil: [<?php echo htmlspecialchars($nombre_completo_actual); ?>]<br>
-                    Lectura JSON: <?php echo file_exists($archivo_tutores) ? 'OK' : 'ERROR RUTAS'; ?><br>
-                    Llaves JSON: [<?php 
-                        $leido = json_decode(file_get_contents($archivo_tutores), true) ?: [];
-                        echo htmlspecialchars(implode(', ', array_keys($leido))); 
-                    ?>]
-                </div>
+                <p style="font-size: 0.8rem; color: #666; margin-top: 5px; margin-bottom: 0;">Contactá al administrador para que realice la asignación.</p>
             </div>
             <?php endif; ?>
         <?php endif; ?>
         <?php if ($es_alumno || $es_tutor): ?>
         <div class="menu-section">
             <span class="section-title">Padres y Alumnos</span>
-            <a href="#" class="nav-item menu-activo" data-vista="vista-documentacion"><i>📂</i> <span>Documentación</span></a>
+            <a href="#" class="nav-item menu-activo" data-vista="vista-home"><i>🏠</i> <span>Inicio</span></a>
+            <a href="#" class="nav-item" data-vista="vista-documentacion"><i>📂</i> <span>Documentación</span></a>
             <a href="#" class="nav-item" data-vista="vista-calificaciones"><i>📊</i> <span>Calificaciones</span></a>
             <a href="#" class="nav-item" data-vista="vista-asistencia-alumno"><i>📅</i> <span>Asistencia</span></a>
             <a href="#" class="nav-item" data-vista="vista-servicios"><i>🚌</i> <span>Servicios</span></a>
@@ -1025,8 +1082,9 @@ if (file_exists($archivo_postulaciones)) {
         <?php if ($es_profesor || $es_preceptor): ?>
         <div class="menu-section">
             <span class="section-title" style="border-top: 1px solid #eee; padding-top: 15px;">Plantel Docente</span>
+            <a href="#" class="nav-item menu-activo" data-vista="vista-home"><i>🏠</i> <span>Inicio</span></a>
             <?php if ($es_profesor): ?>
-                <a href="#" class="nav-item menu-activo" data-vista="vista-gestion-aula"><i>🏫</i> <span>Gestión de Aula</span></a>
+                <a href="#" class="nav-item" data-vista="vista-gestion-aula"><i>🏫</i> <span>Gestión de Aula</span></a>
                 <a href="#" class="nav-item" data-vista="vista-reservas"><i>🧪</i> <span>Reservas</span></a>
                 <a href="#" class="nav-item" data-vista="vista-actividades"><i>📝</i> <span>Actividades y Tareas</span></a>
             <?php endif; ?>
@@ -1036,7 +1094,7 @@ if (file_exists($archivo_postulaciones)) {
         <?php if ($es_preceptor || $es_maestro_primaria): ?>
         <div class="menu-section">
             <span class="section-title" style="border-top: 1px solid #eee; padding-top: 15px;">Control de Asistencia</span>
-            <a href="#" class="nav-item <?php echo $es_preceptor ? 'menu-activo' : ''; ?>" data-vista="vista-asistencia-preceptor"><i>📝</i> <span>Tomar Asistencia</span></a>
+            <a href="#" class="nav-item" data-vista="vista-asistencia-preceptor"><i>📝</i> <span>Tomar Asistencia</span></a>
             <?php if ($es_preceptor): ?>
             <a href="#" class="nav-item" data-vista="vista-documentos-preceptor"><i>📂</i> <span>Legajos Médicos</span></a>
             <?php endif; ?>
@@ -1046,15 +1104,16 @@ if (file_exists($archivo_postulaciones)) {
         <?php if ($es_admin): ?>
         <div class="menu-section">
             <span class="section-title" style="border-top: 1px solid #eee; padding-top: 15px;">Administrativo</span>
-            <a href="#" class="nav-item menu-activo" data-vista="vista-usuarios"><i>👥</i> <span>Gestión de Usuarios</span></a>
+            <a href="#" class="nav-item menu-activo" data-vista="vista-home"><i>🏠</i> <span>Inicio</span></a>
+            <a href="#" class="nav-item" data-vista="vista-usuarios"><i>👥</i> <span>Gestión de Usuarios</span></a>
             <a href="#" class="nav-item" data-vista="vista-cursos"><i>📚</i> <span>Asignación de Cátedras</span></a>
             <a href="#" class="nav-item" data-vista="vista-asignar-alumnos"><i>🎒</i> <span>Asignación de Alumnos</span></a>
             <a href="#" class="nav-item" data-vista="vista-admin-capacitaciones"><i>🎓</i> <span>Gestión Capacitaciones</span></a>
             <a href="#" class="nav-item" data-vista="vista-admin-talleres"><i>🏀</i> <span>Gestión Talleres</span></a> <a href="#" class="nav-item" data-vista="vista-comedor"><i>🥗</i> <span>Comedor</span></a>
             <a href="#" class="nav-item" data-vista="vista-transporte"><i>🚌</i> <span>Rutas de Transporte</span></a>
+            <a href="#" class="nav-item" data-vista="vista-historial-calificaciones"><i>📊</i> <span>Historial de Notas</span></a>
             <a href="#" class="nav-item" data-vista="vista-entrevistas"><i>🤝</i> <span>Entrevistas Admisión</span></a>
             <a href="#" class="nav-item" data-vista="vista-rrhh"><i>💼</i> <span>Recursos Humanos (RRHH)</span></a>
-            <a href="#" class="nav-item" data-vista="vista-correos"><i>📧</i> <span>Registro de Correos</span></a>
         </div>
         <?php endif; ?>
         <div class="menu-section" style="margin-top: auto; padding-bottom: 20px;">
@@ -1075,18 +1134,44 @@ if (file_exists($archivo_postulaciones)) {
             </div>
             <button onclick="toggleSidebar()" style="background: #f0f4f8; border: none; font-size: 1.5rem; color: var(--azul-primario); padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s;">☰</button>
         </div>
-        <?php if (isset($_GET['msj']) && $_GET['msj'] === 'clave_actualizada'): ?>
-            <div style="background: #e6f6ec; color: var(--verde); padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 20px;">
-                ✅ ¡Tu contraseña se ha actualizado correctamente!
+        <!-- VISTA HOME -->
+        <section id="vista-home" class="vista-panel vista-activa">
+            <header class="top-bar">
+                <div class="user-welcome">
+                    <h1>¡Bienvenido, <?php echo htmlspecialchars($etiqueta_perfil); ?>!</h1>
+                    <p style="color: #666;">Resumen del sistema</p>
+                </div>
+                <div class="user-profile">
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
+                    <div class="user-avatar"><?php echo $iniciales; ?></div>
+                </div>
+            </header>
+            <?php if ($es_admin): ?>
+            <div class="home-grid">
+                <div class="home-card verde">  <div class="hc-icon">🎒</div><div class="hc-num"><?php echo $stat_total_alumnos; ?></div> <div class="hc-label">Alumnos inscriptos</div></div>
+                <div class="home-card celeste"><div class="hc-icon">🏫</div><div class="hc-num"><?php echo $stat_total_docentes; ?></div><div class="hc-label">Docentes y preceptores</div></div>
+                <div class="home-card naranja"><div class="hc-icon">🤝</div><div class="hc-num"><?php echo $stat_entrev_pend; ?></div> <div class="hc-label">Entrevistas pendientes</div></div>
+                <div class="home-card rosa">   <div class="hc-icon">💼</div><div class="hc-num"><?php echo $stat_post_pend; ?></div>   <div class="hc-label">Postulaciones nuevas</div></div>
+                <div class="home-card violeta"><div class="hc-icon">🏀</div><div class="hc-num"><?php echo $stat_talleres_act; ?></div> <div class="hc-label">Talleres activos</div></div>
+                <div class="home-card">        <div class="hc-icon">👥</div><div class="hc-num"><?php echo $stat_total_usuarios; ?></div><div class="hc-label">Usuarios totales</div></div>
             </div>
-        <?php endif; ?>
-        <?php if (isset($_GET['error']) && $_GET['error'] === 'clave_incorrecta'): ?>
-            <div style="background: #fff5f2; color: var(--naranja); padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 20px;">
-                ⚠️ La contraseña actual ingresada es incorrecta. No se realizaron cambios.
+            <?php elseif ($es_profesor || $es_preceptor): ?>
+            <div class="home-grid">
+                <div class="home-card celeste"><div class="hc-icon">📚</div><div class="hc-num"><?php echo count($mis_cursos); ?></div>        <div class="hc-label">Cursos asignados</div></div>
+                <div class="home-card verde">  <div class="hc-icon">🎒</div><div class="hc-num"><?php echo $stat_mis_alumnos; ?></div>         <div class="hc-label">Alumnos a cargo</div></div>
+                <div class="home-card naranja"><div class="hc-icon">🎓</div><div class="hc-num"><?php echo count($todas_las_capacitaciones); ?></div><div class="hc-label">Capacitaciones disponibles</div></div>
             </div>
-        <?php endif; ?>
-        
-        <section id="vista-documentacion" class="vista-panel <?php echo ($es_alumno || $es_tutor) ? 'vista-activa' : ''; ?>">   
+            <?php elseif ($es_alumno || $es_tutor): ?>
+            <div class="home-grid">
+                <div class="home-card celeste"><div class="hc-icon">📖</div><div class="hc-num"><?php echo $stat_mis_materias; ?></div><div class="hc-label">Materias cursando</div></div>
+                <div class="home-card verde">  <div class="hc-icon">📊</div><div class="hc-num"><?php echo $stat_mis_notas; ?></div>   <div class="hc-label">Notas registradas</div></div>
+                <div class="home-card naranja"><div class="hc-icon">📂</div><div class="hc-num"><?php echo $stat_mis_docs; ?></div>    <div class="hc-label">Documentos cargados</div></div>
+                <div class="home-card violeta"><div class="hc-icon">🏀</div><div class="hc-num"><?php echo count($mis_talleres); ?></div><div class="hc-label">Talleres inscripto</div></div>
+            </div>
+            <?php endif; ?>
+        </section>
+
+        <section id="vista-documentacion" class="vista-panel">   
             <header class="top-bar">
                 <div class="user-welcome">
                     <h1>Carga de Documentación</h1>
@@ -1099,27 +1184,6 @@ if (file_exists($archivo_postulaciones)) {
             </header>
 
             <div class="dashboard-grid">
-                
-                <?php if (isset($_GET['subida'])): ?>
-                <div style="margin-bottom: 20px;">
-                    <?php if ($_GET['subida'] === 'exito'): ?>
-                        <div style="background: #e6f6ec; color: var(--verde); padding: 12px; border-radius: 8px; font-weight: bold;">
-                            ✅ Documento subido y guardado correctamente.
-                        </div>
-                    <?php elseif ($_GET['subida'] === 'error_seguridad'): ?>
-                        <div style="background: #fce8e6; color: var(--naranja); padding: 12px; border-radius: 8px; font-weight: bold;">
-                            ⚠️ Archivo rechazado por seguridad. Solo se permiten formatos .PDF, .JPG o .PNG estándar.
-                        </div>
-                    <?php else: ?>
-                        <div style="background: #fff3cd; color: #856404; padding: 12px; border-radius: 8px; font-weight: bold;">
-                            ⚠️ Hubo un error al procesar el archivo. Es probable que sea demasiado pesado para el servidor.
-                        </div>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
-
-            <div class="dashboard-grid">
-                
                 <?php if ($es_tutor): ?>
                 <div class="stat-card">
                     <h3>Subir Nuevo Documento</h3>
@@ -1132,7 +1196,7 @@ if (file_exists($archivo_postulaciones)) {
                         <select name="tipo_doc" id="tipo-doc" required style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #ddd;">
                             <option value="" disabled selected>Elegí qué vas a subir...</option>
                             <?php foreach ($tipos_permitidos as $tipo): ?>
-                                <?php if ($tipo === 'Certificado Médico / Justificación de Falta' || $tipo === 'Permiso de Retiro' || !isset($mis_documentos[$tipo])): ?>
+                                <?php if ($tipo === 'Certificado Medico / Justificacion de Falta' || $tipo === 'Permiso de Retiro' || !isset($mis_documentos[$tipo])): ?>
                                     <option value="<?php echo htmlspecialchars($tipo); ?>"><?php echo htmlspecialchars($tipo); ?></option>
                                 <?php endif; ?>
                             <?php endforeach; ?>
@@ -1149,7 +1213,7 @@ if (file_exists($archivo_postulaciones)) {
                     <ul style="list-style: none; padding: 0; margin-top: 15px;">
                         <?php foreach ($tipos_permitidos as $tipo): ?>
                             <?php if (isset($mis_documentos[$tipo])): ?>
-                                <?php if ($tipo === 'Certificado Médico / Justificación de Falta' || $tipo === 'Permiso de Retiro'): ?>
+                                <?php if ($tipo === 'Certificado Medico / Justificacion de Falta' || $tipo === 'Permiso de Retiro'): ?>
                                     
                                     <?php 
                                     $lista_docs = isset($mis_documentos[$tipo]['fecha']) ? [$mis_documentos[$tipo]] : $mis_documentos[$tipo];
@@ -1312,17 +1376,6 @@ if (file_exists($archivo_postulaciones)) {
         <?php endif; ?>
         <section id="vista-asignar-alumnos" class="vista-panel">
             <header class="top-bar" style="flex-direction: column; align-items: stretch; gap: 15px;">
-                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'alumno_asignado'): ?>
-                    <div style="background: #e6f6ec; color: var(--verde); padding: 12px; border-radius: 8px; font-weight: bold;">
-                        ✅ Estudiante matriculado y asignado al curso correctamente.
-                    </div>
-                <?php endif; ?>
-                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'alumno_removido'): ?>
-                    <div style="background: #fff5f2; color: var(--naranja); padding: 12px; border-radius: 8px; font-weight: bold;">
-                        🗑️ Estudiante removido del curso con éxito.
-                    </div>
-                <?php endif; ?>
-
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div class="user-welcome">
                         <h1>Asignación de Alumnos</h1>
@@ -1350,7 +1403,7 @@ if (file_exists($archivo_postulaciones)) {
                     }
                     sort($alumnos_totales_sistema);
 
-                    function renderizarAsignacionAlumnos($cursos, $divisiones, $nivel_nombre, $alumnos_por_curso, $alumnos_totales_sistema) {
+                    function renderizarAsignacionAlumnos($cursos, $divisiones, $nivel_nombre, $alumnos_por_curso, $alumnos_totales_sistema, $tutores_sistema, $tutor_por_alumno) {
                         echo "<h4 style='color: var(--azul-primario); margin-top: 25px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;'>Alumnos - Nivel {$nivel_nombre}</h4>";
                         
                         foreach ($cursos as $id_curso => $label_curso) {
@@ -1382,21 +1435,42 @@ if (file_exists($archivo_postulaciones)) {
                                         <table class="tabla-datos" style="width: 100%;">
                                             <thead>
                                                 <tr>
-                                                    <th style="width: 75%;">Nombre del Estudiante</th>
-                                                    <th style="width: 25%; text-align: right;">Acción</th>
+                                                    <th style="width: 30%;">Nombre del Estudiante</th>
+                                                    <th style="width: 50%;">Tutor Asignado</th>
+                                                    <th style="width: 20%; text-align: right;">Acción</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <?php if (empty($alumnos_este_curso)): ?>
                                                     <tr>
-                                                        <td colspan="2" style="text-align: center; color: #999; padding: 15px;">No hay alumnos asignados a esta división.</td>
+                                                        <td colspan="3" style="text-align: center; color: #999; padding: 15px;">No hay alumnos asignados a esta división.</td>
                                                     </tr>
                                                 <?php else: ?>
-                                                    <?php foreach ($alumnos_este_curso as $alumno_item): ?>
+                                                    <?php foreach ($alumnos_este_curso as $alumno_item):
+                                                        $tutor_actual = $tutor_por_alumno[$alumno_item] ?? '';
+                                                    ?>
                                                         <tr>
                                                             <td>👤 <strong><?php echo htmlspecialchars($alumno_item); ?></strong></td>
+                                                            <td>
+                                                                <?php if (empty($tutores_sistema)): ?>
+                                                                    <span style="color: #aaa; font-size: 0.85rem;">No hay tutores en el sistema</span>
+                                                                <?php else: ?>
+                                                                <form action="procesos/procesar_asignacion_tutor.php" method="POST" style="display: flex; gap: 6px; align-items: center; margin: 0;">
+                                                                    <input type="hidden" name="alumno_nombre" value="<?php echo htmlspecialchars($alumno_item); ?>">
+                                                                    <select name="tutor_username" style="flex: 1; padding: 5px 8px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit; font-size: 0.85rem;">
+                                                                        <option value="">— Sin tutor —</option>
+                                                                        <?php foreach ($tutores_sistema as $t_user => $t_nombre): ?>
+                                                                            <option value="<?php echo htmlspecialchars($t_user); ?>" <?php echo $tutor_actual === $t_user ? 'selected' : ''; ?>>
+                                                                                <?php echo htmlspecialchars($t_nombre); ?>
+                                                                            </option>
+                                                                        <?php endforeach; ?>
+                                                                    </select>
+                                                                    <button type="submit" class="btn-accion" style="color: var(--verde); border-color: var(--verde); padding: 4px 10px; font-size: 0.8rem; background: white; white-space: nowrap;">💾 Guardar</button>
+                                                                </form>
+                                                                <?php endif; ?>
+                                                            </td>
                                                             <td style="text-align: right;">
-                                                                <form action="procesos/procesar_asignacion_alumno.php" method="POST" style="margin: 0;" onsubmit="return confirm('¿Seguro que querés remover a este alumno de este curso?');">
+                                                                <form action="procesos/procesar_asignacion_alumno.php" method="POST" style="margin: 0;" onsubmit="return appConfirm(event, this, '¿Seguro que querés remover a este alumno de este curso?');">
                                                                     <input type="hidden" name="accion" value="quitar">
                                                                     <input type="hidden" name="curso_clave" value="<?php echo $clave_c; ?>">
                                                                     <input type="hidden" name="alumno_nombre" value="<?php echo htmlspecialchars($alumno_item); ?>">
@@ -1415,8 +1489,8 @@ if (file_exists($archivo_postulaciones)) {
                         }
                     }
 
-                    renderizarAsignacionAlumnos($cursos_prim, $divisiones, 'Primario', $alumnos_por_curso, $alumnos_totales_sistema);
-                    renderizarAsignacionAlumnos($cursos_sec, $divisiones, 'Secundario', $alumnos_por_curso, $alumnos_totales_sistema);
+                    renderizarAsignacionAlumnos($cursos_prim, $divisiones, 'Primario', $alumnos_por_curso, $alumnos_totales_sistema, $tutores_sistema, $tutor_por_alumno);
+                    renderizarAsignacionAlumnos($cursos_sec, $divisiones, 'Secundario', $alumnos_por_curso, $alumnos_totales_sistema, $tutores_sistema, $tutor_por_alumno);
                     ?>
                 </div>
             </div>
@@ -1451,7 +1525,7 @@ if (file_exists($archivo_postulaciones)) {
                             <ul style="list-style: none; padding: 0; margin: 0;">
                                 <?php foreach ($examenes as $ex): ?>
                                     <li style="padding: 12px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-                                        <span>📝 <?php echo htmlspecialchars($ex['examen']); ?></span>
+                                        <span>📝 <?php echo htmlspecialchars($ex['nombre']); ?></span>
                                         <strong style="color: var(--azul-primario); font-size: 1.1rem;">
                                             Nota: <?php echo htmlspecialchars($ex['nota']); ?>
                                         </strong>
@@ -1609,7 +1683,7 @@ if (file_exists($archivo_postulaciones)) {
                                         </p>
                                     </div>
                                     <div style="display: flex; gap: 10px;">
-                                        <form action="procesos/procesar_actividad.php" method="POST" onsubmit="return confirm('¿Borrar esta actividad y todas sus entregas?');">
+                                        <form action="procesos/procesar_actividad.php" method="POST" onsubmit="return appConfirm(event, this, '¿Borrar esta actividad y todas sus entregas?');">
                                             <input type="hidden" name="accion" value="borrar">
                                             <input type="hidden" name="id_actividad" value="<?php echo htmlspecialchars($act['id']); ?>">
                                             <button type="submit" class="btn-accion" style="color: var(--naranja); border-color: var(--naranja);">🗑️ Borrar</button>
@@ -1819,7 +1893,7 @@ if (file_exists($archivo_postulaciones)) {
                                                         <?php foreach ($lista_examenes as $indice => $nota_info): ?>
                                                             <div style="background-color: #f0f4f8; border: 1px solid #d9e2ec; border-radius: 6px; padding: 5px 10px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
                                                                 <span style="color: var(--azul-primario);">
-                                                                    <strong>[<?php echo htmlspecialchars($nombre_mat); ?>] <?php echo htmlspecialchars($nota_info['examen']); ?>:</strong> <?php echo htmlspecialchars($nota_info['nota']); ?>
+                                                                    <strong>[<?php echo htmlspecialchars($nombre_mat); ?>] <?php echo htmlspecialchars($nota_info['nombre']); ?>:</strong> <?php echo htmlspecialchars($nota_info['nota']); ?>
                                                                 </span>
                                                                 
                                                                 <form action="procesos/eliminar_nota.php" method="POST" style="margin: 0; display: flex; align-items: center;">
@@ -1859,23 +1933,6 @@ if (file_exists($archivo_postulaciones)) {
 
         <section id="vista-reservas" class="vista-panel">
             <header class="top-bar" style="flex-direction: column; align-items: stretch; gap: 15px;">
-                
-                <?php if (isset($_GET['error']) && $_GET['error'] === 'ocupado'): ?>
-                    <div style="background: #fff5f2; color: var(--naranja); padding: 12px; border-radius: 8px; font-weight: bold;">
-                        ⚠️ ¡Atención! El espacio ya se encuentra reservado por otro docente en ese mismo día y módulo. Elegí otro horario.
-                    </div>
-                <?php endif; ?>
-                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'reservado'): ?>
-                    <div style="background: #e6f6ec; color: var(--verde); padding: 12px; border-radius: 8px; font-weight: bold;">
-                        ✅ ¡Tu reserva ha sido confirmada y agendada con éxito!
-                    </div>
-                <?php endif; ?>
-                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'eliminado'): ?>
-                    <div style="background: #e1f5fe; color: var(--azul-primario); padding: 12px; border-radius: 8px; font-weight: bold;">
-                        🗑️ La reserva fue cancelada y el espacio vuelve a estar disponible.
-                    </div>
-                <?php endif; ?>
-
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div class="user-welcome">
                         <h1>Reservas de Espacios</h1>
@@ -1970,7 +2027,7 @@ if (file_exists($archivo_postulaciones)) {
                                     // Solo el profe que la creó (o un admin futuro) puede borrarla
                                     if ($es_profesor && $r['profesor'] === $nombre_completo_actual): 
                                     ?>
-                                    <form action="procesos/procesar_reserva.php" method="POST" style="margin: 0;" onsubmit="return confirm('¿Seguro querés liberar este espacio?');">
+                                    <form action="procesos/procesar_reserva.php" method="POST" style="margin: 0;" onsubmit="return appConfirm(event, this, '¿Seguro querés liberar este espacio?');">
                                         <input type="hidden" name="accion" value="eliminar">
                                         <input type="hidden" name="id_reserva" value="<?php echo htmlspecialchars($r['id'] ?? ''); ?>">
                                         <button type="submit" class="btn-accion" style="color: var(--naranja); border-color: var(--naranja); padding: 8px 15px; font-weight: bold;">❌ Cancelar Reserva</button>
@@ -2057,8 +2114,8 @@ if (file_exists($archivo_postulaciones)) {
 
                         $hay_legajos = false;
                         foreach ($mis_alumnos_unicos as $alum) {
-                            $apto = $todos_los_documentos[$alum]['Apto Físico'] ?? null;
-                            $certificados = $todos_los_documentos[$alum]['Certificado Médico / Justificación de Falta'] ?? null;
+                            $apto = $todos_los_documentos[$alum]['Apto Fisico'] ?? null;
+                            $certificados = $todos_los_documentos[$alum]['Certificado Medico / Justificacion de Falta'] ?? null;
 
                             if ($apto || $certificados) {
                                 $hay_legajos = true;
@@ -2084,32 +2141,8 @@ if (file_exists($archivo_postulaciones)) {
             </div>
         </section>
 
-        <section id="vista-usuarios" class="vista-panel <?php echo $es_admin ? 'vista-activa' : ''; ?>">
+        <section id="vista-usuarios" class="vista-panel">
             <header class="top-bar" style="flex-direction: column; align-items: stretch; gap: 15px;">
-                <?php if (isset($_GET['error']) && $_GET['error'] === 'duplicado'): ?>
-                    <div style="background: #fce8e6; color: var(--naranja); padding: 12px; border-radius: 8px; font-weight: bold;">
-                        ⚠️ El nombre de usuario de login ya se encuentra registrado. Elegí otro.
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'usuario_creado'): ?>
-                    <div style="background: #e6f6ec; color: var(--verde); padding: 12px; border-radius: 8px; font-weight: bold;">
-                        ✅ ¡Usuario registrado con éxito en el sistema! Ya puede iniciar sesión.
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'usuario_modificado'): ?>
-                    <div style="background: #e1f5fe; color: var(--azul-primario); padding: 12px; border-radius: 8px; font-weight: bold;">
-                        ⚙️ ¡Credenciales actualizadas con éxito!
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'usuario_eliminado'): ?>
-                    <div style="background: #fff5f2; color: var(--naranja); padding: 12px; border-radius: 8px; font-weight: bold;">
-                        🗑️ El usuario ha sido removido por completo del sistema.
-                    </div>
-                <?php endif; ?>
-
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div class="user-welcome">
                         <h1>Gestión de Usuarios</h1>
@@ -2133,7 +2166,7 @@ if (file_exists($archivo_postulaciones)) {
                                     <td><strong><?php echo htmlspecialchars($rec['usuario']); ?></strong></td>
                                     <td><span class="badge badge-pendiente"><?php echo $rec['fecha']; ?></span></td>
                                     <td style="text-align: right;">
-                                        <form action="procesos/blanquear_clave.php" method="POST" onsubmit="return confirm('¿Confirmás el blanqueo de clave a 123 para este usuario?');" style="margin:0;">
+                                        <form action="procesos/blanquear_clave.php" method="POST" onsubmit="return appConfirm(event, this, '¿Confirmás el blanqueo de clave a 123 para este usuario?');" style="margin:0;">
                                             <input type="hidden" name="usuario_blanquear" value="<?php echo htmlspecialchars($rec['usuario']); ?>">
                                             <button type="submit" class="btn-nuevo" style="background-color: var(--naranja); padding: 8px 15px; font-size: 0.85rem;">🔄 Restablecer a 123</button>
                                         </form>
@@ -2194,12 +2227,13 @@ if (file_exists($archivo_postulaciones)) {
 
             <div class="dashboard-grid" style="grid-template-columns: 1fr;">
                 <div class="stat-card" style="border-left-color: var(--violeta);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <h3>Árbol de Cuentas Institucionales</h3>
                         <button type="button" class="btn-nuevo" id="btn-abrir-usuarios" style="background-color: var(--violeta); display: flex; align-items: center; gap: 8px;">
                             👥 Registrar Nuevo Usuario
                         </button>
                     </div>
+                    <input type="text" id="buscador-arbol" placeholder="🔍 Buscar usuario por nombre o login..." style="width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; margin-bottom: 20px; box-sizing: border-box;">
 
                     <details class="acordeon-materia" style="border-left-color: var(--verde); margin-bottom: 15px;">
                         <summary style="font-weight: bold; color: #333;">🎒 Alumnos (Agrupados por Curso y División)</summary>
@@ -2217,7 +2251,7 @@ if (file_exists($archivo_postulaciones)) {
                                         <div style="padding: 10px; overflow-x: auto;">
                                             <table class="tabla-datos">
                                                 <thead>
-                                                    <tr><th>Nombre Completo</th><th>Usuario (Login)</th><th>Contraseña</th><th style="text-align:right;">Acciones</th></tr>
+                                                    <tr><th>Nombre Completo</th><th>Usuario (Login)</th><th style="text-align:right;">Acciones</th></tr>
                                                 </thead>
                                                 <tbody>
                                                     <?php foreach ($lista_de_alumnos as $alu): ?>
@@ -2235,8 +2269,7 @@ if (file_exists($archivo_postulaciones)) {
                                                                         data-ttel="<?php echo htmlspecialchars($alu['tutor_telefono'] ?? 'No cargado'); ?>"
                                                                         data-temail="<?php echo htmlspecialchars($alu['tutor_email'] ?? 'No cargado'); ?>"
                                                                     >👁️ Ficha</button>
-                                                                    <button type="button" class="btn-accion btn-editar-usuario" data-nombre="<?php echo htmlspecialchars($alu['nombre']); ?>" data-usuario="<?php echo htmlspecialchars($alu['usuario']); ?>" data-password="••••••••">✏️ Modificar</button>
-                                                                    <form action="procesos/eliminar_usuario.php" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar a este alumno? Esto limpiará sus accesos.');" style="margin:0;">
+                                                                    <form action="procesos/eliminar_usuario.php" method="POST" onsubmit="return appConfirm(event, this, '¿Estás seguro de eliminar a este alumno? Esto limpiará sus accesos.');" style="margin:0;">
                                                                         <input type="hidden" name="usuario_id" value="<?php echo htmlspecialchars($alu['usuario']); ?>">
                                                                         <button type="submit" class="btn-accion" style="color:var(--naranja); border-color:var(--naranja);">🗑️ Borrar</button>
                                                                     </form>
@@ -2258,15 +2291,13 @@ if (file_exists($archivo_postulaciones)) {
                         if (empty($lista)) {
                             echo '<p style="color:#999; padding: 10px;">No hay personal registrado en esta categoría.</p>';
                         } else {
-                            echo '<div style="overflow-x:auto;"><table class="tabla-datos"><thead><tr><th>Nombre Completo</th><th>Usuario (Login)</th><th>Contraseña</th><th style="text-align:right;">Acciones</th></tr></thead><tbody>';
+                            echo '<div style="overflow-x:auto;"><table class="tabla-datos"><thead><tr><th>Nombre Completo</th><th>Usuario (Login)</th><th style="text-align:right;">Acciones</th></tr></thead><tbody>';
                             foreach ($lista as $usr_item) {
                                 echo '<tr>';
                                 echo '<td><strong>'.htmlspecialchars($usr_item['nombre']).'</strong></td>';
                                 echo '<td><code>'.htmlspecialchars($usr_item['usuario']).'</code></td>';
-                                echo '<td><code>'.htmlspecialchars($usr_item['password']).'</code></td>';
                                 echo '<td style="text-align:right;"><div class="acciones-celda" style="justify-content: flex-end;">';
-                                echo '<button type="button" class="btn-accion btn-editar-usuario" data-nombre="'.htmlspecialchars($usr_item['nombre']).'" data-usuario="'.htmlspecialchars($usr_item['usuario']).'" data-password="'.htmlspecialchars($usr_item['password']).'">✏️ Modificar</button>';
-                                echo '<form action="procesos/eliminar_usuario.php" method="POST" onsubmit="return confirm(\'¿Eliminar por completo a este usuario?\');" style="margin:0;">';
+                                echo '<form action="procesos/eliminar_usuario.php" method="POST" onsubmit="return appConfirm(event, this, \'¿Eliminar por completo a este usuario?\');" style="margin:0;">';
                                 echo '<input type="hidden" name="usuario_id" value="'.htmlspecialchars($usr_item['usuario']).'">';
                                 echo '<button type="submit" class="btn-accion" style="color:var(--naranja); border-color:var(--naranja);">🗑️ Borrar</button>';
                                 echo '</form>';
@@ -2375,7 +2406,7 @@ if (file_exists($archivo_postulaciones)) {
                                             📅 <?php echo date('d/m/Y', strtotime($cap['fecha'])); ?> | 🕒 <?php echo htmlspecialchars($cap['hora']); ?> hs | 📍 <?php echo htmlspecialchars($cap['lugar']); ?>
                                         </p>
                                     </div>
-                                    <form action="procesos/procesar_capacitacion.php" method="POST" style="margin: 0;" onsubmit="return confirm('¿Seguro que querés borrar este curso completo?');">
+                                    <form action="procesos/procesar_capacitacion.php" method="POST" style="margin: 0;" onsubmit="return appConfirm(event, this, '¿Seguro que querés borrar este curso completo?');">
                                         <input type="hidden" name="accion" value="borrar">
                                         <input type="hidden" name="id_cap" value="<?php echo htmlspecialchars($cap['id']); ?>">
                                         <button type="submit" class="btn-accion" style="color: var(--naranja); border-color: var(--naranja);">🗑️ Borrar</button>
@@ -2465,7 +2496,7 @@ if (file_exists($archivo_postulaciones)) {
                                             📅 <?php echo date('d/m/Y', strtotime($taller['fecha'])); ?> | 🕒 <?php echo htmlspecialchars($taller['hora']); ?> hs | 📍 <?php echo htmlspecialchars($taller['lugar']); ?>
                                         </p>
                                     </div>
-                                    <form action="procesos/procesar_taller.php" method="POST" style="margin: 0;" onsubmit="return confirm('¿Seguro que querés dar de baja este taller por completo?');">
+                                    <form action="procesos/procesar_taller.php" method="POST" style="margin: 0;" onsubmit="return appConfirm(event, this, '¿Seguro que querés dar de baja este taller por completo?');">
                                         <input type="hidden" name="accion" value="borrar">
                                         <input type="hidden" name="id_taller" value="<?php echo htmlspecialchars($taller['id']); ?>">
                                         <button type="submit" class="btn-accion" style="color: var(--naranja); border-color: var(--naranja);">🗑️ Eliminar</button>
@@ -2587,7 +2618,7 @@ if (file_exists($archivo_postulaciones)) {
                     foreach ($mis_cursos_alumno as $c_alumno) {
                         if (isset($todas_asistencias[$c_alumno])) {
                             foreach ($todas_asistencias[$c_alumno] as $fecha => $ausentes) {
-                                if (in_array(trim($nombre_completo_actual), $ausentes)) {
+                                if (isset($ausentes[trim($nombre_completo_actual)]) && !in_array($fecha, $fechas_cert_aprobado)) {
                                     $mis_faltas[] = ['fecha' => $fecha, 'curso' => $c_alumno];
                                 }
                             }
@@ -2598,8 +2629,8 @@ if (file_exists($archivo_postulaciones)) {
                    <?php
                     // Contamos las faltas justificadas (certificados médicos aprobados)
                     $cant_justificadas = 0;
-                    if (isset($mis_documentos['Certificado Médico / Justificación de Falta'])) {
-                        foreach ($mis_documentos['Certificado Médico / Justificación de Falta'] as $doc) {
+                    if (isset($mis_documentos['Certificado Medico / Justificacion de Falta'])) {
+                        foreach ($mis_documentos['Certificado Medico / Justificacion de Falta'] as $doc) {
                             if (($doc['estado'] ?? 'pendiente') === 'aprobado') {
                                 $cant_justificadas++;
                             }
@@ -2630,7 +2661,7 @@ if (file_exists($archivo_postulaciones)) {
                                     $nombre_c = str_replace(['_anio', '_grado', '_'], ['° Año', '° Grado', ' '], $falta['curso']);
                                 ?>
                                 <tr>
-                                    <td><strong style="color: var(--naranja);">📅 <?php echo $falta['fecha']; ?></strong></td>
+                                    <td><strong style="color: var(--naranja);">📅 <?php echo date('d/m/Y', strtotime($falta['fecha'])); ?></strong></td>
                                     <td><?php echo $nombre_c; ?></td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -2654,6 +2685,35 @@ if (file_exists($archivo_postulaciones)) {
                     <div class="user-avatar"><?php echo $iniciales; ?></div>
                 </div>
             </header>
+
+            <?php if (!empty($mis_cursos)): ?>
+            <div class="stat-card" style="border-left-color: var(--celeste); margin-bottom: 20px;">
+                <h3 style="margin-top: 0; margin-bottom: 15px;">📥 Exportar Registro Mensual</h3>
+                <form action="procesos/exportar_asistencia.php" method="GET" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+                    <div class="input-group" style="flex: 1; min-width: 160px; margin: 0;">
+                        <label style="font-size: 0.85rem; color: #555;">Curso</label>
+                        <select name="curso" class="form-control" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; width: 100%;">
+                            <?php
+                            $cursos_unicos = [];
+                            foreach ($mis_cursos as $mc) {
+                                $ck = $mc['curso'] . '_' . $mc['division'];
+                                if (!in_array($ck, $cursos_unicos)) {
+                                    $cursos_unicos[] = $ck;
+                                    $label_exp = str_replace(['_anio', '_grado', '_'], ['° Año', '° Grado', ' '], $ck);
+                                    echo '<option value="' . htmlspecialchars($ck) . '">' . htmlspecialchars($label_exp) . '</option>';
+                                }
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div class="input-group" style="flex: 1; min-width: 160px; margin: 0;">
+                        <label style="font-size: 0.85rem; color: #555;">Mes</label>
+                        <input type="month" name="mes" value="<?php echo date('Y-m'); ?>" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; width: 100%;">
+                    </div>
+                    <button type="submit" class="btn-nuevo" style="background-color: var(--celeste); white-space: nowrap;">⬇️ Descargar CSV</button>
+                </form>
+            </div>
+            <?php endif; ?>
 
             <div class="dashboard-grid">
                 <?php 
@@ -2679,7 +2739,7 @@ if (file_exists($archivo_postulaciones)) {
                     $hay_cursos = true;
                     $nombre_c = str_replace(['_anio', '_grado', '_'], ['° Año', '° Grado', ' '], $clave_curso);
                     $fecha_hoy = date('d-m-Y');
-                    $ya_tomada = isset($todas_asistencias[$clave_curso][$fecha_hoy]);
+                    $ya_tomada = isset($todas_asistencias[$clave_curso][date('Y-m-d')]);
                 ?>
                     <details class="acordeon-materia" style="grid-column: 1 / -1; border-left-color: <?php echo $ya_tomada ? 'var(--verde)' : 'var(--celeste)'; ?>;">
                         <summary>
@@ -2712,12 +2772,13 @@ if (file_exists($archivo_postulaciones)) {
                                                 $al_limpio = trim($al);
                                                 $tiene_certificado_hoy = false;
                                                 
-                                                if (isset($todos_los_documentos[$al_limpio]['Certificado Médico / Justificación de Falta'])) {
-                                                    foreach ($todos_los_documentos[$al_limpio]['Certificado Médico / Justificación de Falta'] as $cert) {
-                                                        $fecha_cert = explode(' ', $cert['fecha'])[0]; 
+                                                if (isset($todos_los_documentos[$al_limpio]['Certificado Medico / Justificacion de Falta'])) {
+                                                    foreach ($todos_los_documentos[$al_limpio]['Certificado Medico / Justificacion de Falta'] as $cert) {
+                                                        $ts_cert = $cert['fecha_raw'] ? strtotime(explode(' ', $cert['fecha_raw'])[0]) : false;
+                                                        $fecha_cert = $ts_cert ? date('d-m-Y', $ts_cert) : '';
                                                         $estado_cert = $cert['estado'] ?? 'pendiente';
-                                                        
-                                                        // MAGIA: Solo bloquea la falta si el estado es 'aprobado'
+
+                                                        // Solo bloquea la falta si el estado es 'aprobado'
                                                         if ($fecha_cert === $fecha_hoy && $estado_cert === 'aprobado') {
                                                             $tiene_certificado_hoy = true;
                                                             break;
@@ -2828,9 +2889,7 @@ if (file_exists($archivo_postulaciones)) {
                                                         // Sistema interactivo de Aprobación
                                                         if ($estado_actual === 'pendiente') {
                                                             echo '<form action="procesos/procesar_estado_certificado.php" method="POST" style="margin: 0; display: flex; gap: 5px;">';
-                                                            echo '<input type="hidden" name="alumno" value="'.htmlspecialchars($alum_nombre).'">';
-                                                            echo '<input type="hidden" name="tipo_doc" value="'.htmlspecialchars($tipo_doc).'">';
-                                                            echo '<input type="hidden" name="indice" value="'.$idx.'">';
+                                                            echo '<input type="hidden" name="doc_id" value="'.htmlspecialchars($infinito['id']).'">';
                                                             echo '<button type="submit" name="accion" value="aprobar" class="btn-accion" style="border-color: var(--verde); color: var(--verde); padding: 3px 8px; font-size: 0.8rem;" title="Aprobar Certificado">✅</button>';
                                                             echo '<button type="submit" name="accion" value="rechazar" class="btn-accion" style="border-color: var(--naranja); color: var(--naranja); padding: 3px 8px; font-size: 0.8rem;" title="Rechazar Certificado">❌</button>';
                                                             echo '</form>';
@@ -2873,26 +2932,76 @@ if (file_exists($archivo_postulaciones)) {
         <?php endif; ?>
 
         <?php if ($es_admin): ?>
+        <section id="vista-historial-calificaciones" class="vista-panel">
+            <header class="top-bar">
+                <div class="user-welcome">
+                    <h1>Historial de Calificaciones</h1>
+                    <p style="color:#666;">Consultá todas las notas de cualquier alumno del sistema.</p>
+                </div>
+                <div class="user-profile">
+                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
+                    <div class="user-avatar"><?php echo $iniciales; ?></div>
+                </div>
+            </header>
+            <div class="dashboard-grid" style="grid-template-columns: 1fr;">
+                <div class="stat-card">
+                    <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap;">
+                        <select id="selector-alumno-notas" style="flex: 1; min-width: 220px; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem;">
+                            <option value="">— Seleccioná un alumno —</option>
+                            <?php foreach (array_keys($todas_las_notas) as $nombre_al): ?>
+                                <option value="<?php echo htmlspecialchars($nombre_al); ?>"><?php echo htmlspecialchars($nombre_al); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div id="contenedor-notas-alumno">
+                        <p style="color:#aaa; text-align:center; padding: 30px 0;">Seleccioná un alumno para ver sus calificaciones.</p>
+                    </div>
+                </div>
+            </div>
+            <script>
+            (function() {
+                const todasLasNotas = <?php echo json_encode($todas_las_notas, JSON_UNESCAPED_UNICODE); ?>;
+                const selector = document.getElementById('selector-alumno-notas');
+                const contenedor = document.getElementById('contenedor-notas-alumno');
+                if (!selector) return;
+                selector.addEventListener('change', function() {
+                    const alumno = this.value;
+                    if (!alumno || !todasLasNotas[alumno]) {
+                        contenedor.innerHTML = '<p style="color:#aaa; text-align:center; padding: 30px 0;">Seleccioná un alumno para ver sus calificaciones.</p>';
+                        return;
+                    }
+                    const materias = todasLasNotas[alumno];
+                    let html = '';
+                    for (const materia in materias) {
+                        const examenes = materias[materia];
+                        const promedio = examenes.length ? (examenes.reduce((s, e) => s + parseFloat(e.nota || 0), 0) / examenes.length).toFixed(1) : '—';
+                        html += `<details class="acordeon-materia" open style="margin-bottom: 12px;">
+                            <summary><strong>📚 ${materia}</strong> <span style="margin-left:auto; font-size:0.85rem; color:#666;">Promedio: <strong>${promedio}</strong></span></summary>
+                            <div class="acordeon-contenido">
+                                <table class="tabla-datos">
+                                    <thead><tr><th>Evaluación</th><th style="text-align:center;">Nota</th><th style="text-align:right;">Fecha</th></tr></thead>
+                                    <tbody>`;
+                        examenes.forEach(ex => {
+                            const nota = parseFloat(ex.nota);
+                            const color = nota >= 7 ? 'var(--verde)' : nota >= 4 ? 'var(--naranja)' : 'var(--rosa)';
+                            html += `<tr>
+                                <td>${ex.nombre}</td>
+                                <td style="text-align:center;"><span style="font-weight:bold; color:${color};">${ex.nota}</span></td>
+                                <td style="text-align:right; color:#888;">${ex.fecha}</td>
+                            </tr>`;
+                        });
+                        html += `</tbody></table></div></details>`;
+                    }
+                    contenedor.innerHTML = html || '<p style="color:#aaa; text-align:center; padding:20px;">Este alumno no tiene calificaciones cargadas aún.</p>';
+                });
+            })();
+            </script>
+        </section>
+        <?php endif; ?>
+
+        <?php if ($es_admin): ?>
         <section id="vista-entrevistas" class="vista-panel">
             <header class="top-bar" style="flex-direction: column; align-items: stretch; gap: 15px;">
-                
-                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'entrevista_agendada'): ?>
-                    <div style="background: #e6f6ec; color: var(--verde); padding: 12px; border-radius: 8px; font-weight: bold;">
-                        ✅ Entrevista agendada correctamente. <br>
-                        <span style="font-size: 0.85rem; color: #155724; font-weight: normal;">📧 (Simulación de Sistema) Se ha enviado un correo automático al tutor con los detalles de la cita.</span>
-                    </div>
-                <?php endif; ?>
-                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'entrevista_modificada'): ?>
-                    <div style="background: #e1f5fe; color: var(--azul-primario); padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 10px;">
-                        ✏️ Fecha y hora de la entrevista actualizadas correctamente.
-                    </div>
-                <?php endif; ?>
-                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'entrevista_eliminada'): ?>
-                    <div style="background: #fff5f2; color: var(--naranja); padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 10px;">
-                        🗑️ La solicitud de entrevista fue cancelada y eliminada.
-                    </div>
-                <?php endif; ?>
-
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div class="user-welcome">
                         <h1>Entrevistas de Admisión</h1>
@@ -2926,7 +3035,7 @@ if (file_exists($archivo_postulaciones)) {
                             </div>
                             
                             <p style="color: #666; font-size: 0.9rem; margin: 5px 0;"><strong>🧒 Aspirante:</strong> <?php echo htmlspecialchars($ent['alumno']); ?> (<?php echo htmlspecialchars($ent['nivel']); ?>)</p>
-                            <p style="color: #666; font-size: 0.85rem; margin: 5px 0;"><strong>📄 DNI:</strong> <?php echo htmlspecialchars($ent['dni_alumno'] ?? 'No especificado'); ?> | <strong>🎂 Nacimiento:</strong> <?php echo htmlspecialchars(date('d/m/Y', strtotime($ent['fecha_nacimiento_alumno'] ?? ''))); ?></p>
+                            <p style="color: #666; font-size: 0.85rem; margin: 5px 0;"><strong>📄 DNI:</strong> <?php echo htmlspecialchars($ent['dni_alumno'] ?? 'No especificado'); ?> | <strong>🎂 Nacimiento:</strong> <?php echo $ent['fecha_nacimiento_alumno'] ? date('d/m/Y', strtotime($ent['fecha_nacimiento_alumno'])) : 'No especificada'; ?></p>
                             <p style="color: #666; font-size: 0.9rem; margin: 5px 0;"><strong>📞 Contacto Tutor:</strong> <?php echo htmlspecialchars($ent['telefono']); ?> | ✉️ <?php echo htmlspecialchars($ent['email']); ?></p>
                             
                             <hr style="border: 0; border-top: 1px dashed #ddd; margin: 15px 0;">
@@ -2955,7 +3064,7 @@ if (file_exists($archivo_postulaciones)) {
                                             data-hora="<?php echo htmlspecialchars($ent['hora_agendada']); ?>"
                                             style="border-color: var(--celeste); color: var(--celeste);">✏️ Reprogramar</button>
                                             
-                                        <form action="procesos/gestionar_entrevista.php" method="POST" onsubmit="return confirm('¿Estás seguro de cancelar esta entrevista?');" style="margin: 0;">
+                                        <form action="procesos/gestionar_entrevista.php" method="POST" onsubmit="return appConfirm(event, this, '¿Estás seguro de cancelar esta entrevista?');" style="margin: 0;">
                                             <input type="hidden" name="accion" value="borrar">
                                             <input type="hidden" name="id_entrevista" value="<?php echo htmlspecialchars($ent['id']); ?>">
                                             <button type="submit" class="btn-accion" style="border-color: var(--naranja); color: var(--naranja);">❌ Cancelar Cita</button>
@@ -2974,22 +3083,6 @@ if (file_exists($archivo_postulaciones)) {
         <?php if ($es_admin): ?>
         <section id="vista-rrhh" class="vista-panel">
             <header class="top-bar" style="flex-direction: column; align-items: stretch; gap: 15px;">
-                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'postulacion_agendada'): ?>
-                    <div style="background: #e6f6ec; color: var(--verde); padding: 12px; border-radius: 8px; font-weight: bold;">
-                        ✅ Convocatoria agendada y correo real enviado al postulante.
-                    </div>
-                <?php endif; ?>
-                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'postulacion_modificada'): ?>
-                    <div style="background: #e1f5fe; color: var(--azul-primario); padding: 12px; border-radius: 8px; font-weight: bold;">
-                        ✏️ Entrevista laboral reprogramada y notificada con éxito.
-                    </div>
-                <?php endif; ?>
-                <?php if (isset($_GET['msj']) && $_GET['msj'] === 'postulacion_eliminada'): ?>
-                    <div style="background: #fff5f2; color: var(--naranja); padding: 12px; border-radius: 8px; font-weight: bold;">
-                        🗑️ Currículum y postulación eliminados del servidor.
-                    </div>
-                <?php endif; ?>
-
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div class="user-welcome">
                         <h1>Recursos Humanos (Bolsa de Trabajo)</h1>
@@ -3041,6 +3134,13 @@ if (file_exists($archivo_postulaciones)) {
                                     </div>
                                     <button type="submit" class="btn-nuevo" style="width: 100%; background-color: var(--azul-primario); font-size: 0.85rem; padding: 8px;">Convocar a Reunión</button>
                                 </form>
+                                <div style="text-align: right; margin-top: 8px;">
+                                    <form action="procesos/gestionar_postulacion.php" method="POST" onsubmit="return appConfirm(event, this, '¿Seguro querés descartar esta postulación laboral?');" style="margin: 0;">
+                                        <input type="hidden" name="accion" value="borrar">
+                                        <input type="hidden" name="id_postulacion" value="<?php echo htmlspecialchars($p['id']); ?>">
+                                        <button type="submit" class="btn-accion" style="border-color: var(--naranja); color: var(--naranja); font-size: 0.8rem; padding: 4px 10px;">❌ Descartar postulación</button>
+                                    </form>
+                                </div>
                             <?php else: ?>
                                 <div style="background: #e6f6ec; padding: 12px; border-radius: 8px; border: 1px solid #c3e6cb; text-align: center;">
                                     <p style="margin: 0; color: #155724; font-weight: bold; font-size: 0.85rem;">Cita laboral pactada:</p>
@@ -3053,7 +3153,7 @@ if (file_exists($archivo_postulaciones)) {
                                             data-hora="<?php echo htmlspecialchars($p['hora_entrevista']); ?>"
                                             style="border-color: var(--celeste); color: var(--celeste); font-size: 0.8rem; padding: 4px 8px;">✏️ Cambiar</button>
                                             
-                                        <form action="procesos/gestionar_postulacion.php" method="POST" onsubmit="return confirm('¿Seguro querés descartar esta postulación laboral?');" style="margin: 0;">
+                                        <form action="procesos/gestionar_postulacion.php" method="POST" onsubmit="return appConfirm(event, this, '¿Seguro querés descartar esta postulación laboral?');" style="margin: 0;">
                                             <input type="hidden" name="accion" value="borrar">
                                             <input type="hidden" name="id_postulacion" value="<?php echo htmlspecialchars($p['id']); ?>">
                                             <button type="submit" class="btn-accion" style="border-color: var(--naranja); color: var(--naranja); font-size: 0.8rem; padding: 4px 8px;">❌ Descartar</button>
@@ -3066,58 +3166,6 @@ if (file_exists($archivo_postulaciones)) {
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
-            </div>
-        </section>
-        <?php endif; ?>
-
-        <?php if ($es_admin): ?>
-        <section id="vista-correos" class="vista-panel">
-            <header class="top-bar">
-                <div class="user-welcome">
-                    <h1>Bandeja de Salida (Simulador)</h1>
-                    <p style="color: #666;">Auditoría de correos automáticos disparados por el sistema.</p>
-                </div>
-                <div class="user-profile">
-                    <span class="user-name"><?php echo htmlspecialchars($etiqueta_perfil); ?></span>
-                    <div class="user-avatar"><?php echo $iniciales; ?></div>
-                </div>
-            </header>
-
-            <div class="dashboard-grid" style="grid-template-columns: 1fr;">
-                <div class="stat-card" style="border-left-color: var(--celeste);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3 style="margin: 0;">Correos Enviados (Outbox)</h3>
-                        <span class="badge" style="background: #e1f5fe; color: var(--azul-primario);"><?php echo count($todos_los_correos); ?> Procesados</span>
-                    </div>
-
-                    <?php if (empty($todos_los_correos)): ?>
-                        <p style="color: #999; text-align: center; padding: 20px;">No se ha registrado el envío de ningún correo todavía.</p>
-                    <?php else: ?>
-                        <div style="overflow-x: auto;">
-                            <table class="tabla-datos">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 15%;">Fecha/Hora</th>
-                                        <th style="width: 25%;">Destinatario</th>
-                                        <th style="width: 60%;">Asunto y Contenido</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach (array_reverse($todos_los_correos) as $mail): ?>
-                                        <tr>
-                                            <td style="color: #888; font-size: 0.85rem;"><strong><?php echo $mail['fecha_envio']; ?></strong></td>
-                                            <td><span style="background: #f4f7f6; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.85rem; border: 1px solid #ddd;">✉️ <?php echo htmlspecialchars($mail['destinatario']); ?></span></td>
-                                            <td>
-                                                <strong style="color: var(--azul-primario); display: block; margin-bottom: 5px;"><?php echo htmlspecialchars($mail['asunto']); ?></strong>
-                                                <p style="margin: 0; font-size: 0.85rem; color: #555; white-space: pre-wrap; background: #fafafa; padding: 10px; border-left: 3px solid #ddd; border-radius: 4px;"><?php echo htmlspecialchars($mail['cuerpo']); ?></p>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php endif; ?>
-                </div>
             </div>
         </section>
         <?php endif; ?>
@@ -3930,6 +3978,24 @@ if (file_exists($archivo_postulaciones)) {
         // Escuchamos los cambios
         if(buscadorEmpleados) buscadorEmpleados.addEventListener('input', filtrarSueldos);
         if(filtroSueldos) filtroSueldos.addEventListener('change', filtrarSueldos);
+        // --- BUSCADOR DEL ÁRBOL DE CUENTAS ---
+        const buscadorArbol = document.getElementById('buscador-arbol');
+        if (buscadorArbol) {
+            buscadorArbol.addEventListener('input', function() {
+                const texto = this.value.toLowerCase().trim();
+                document.querySelectorAll('#vista-usuarios .tabla-datos tbody tr').forEach(tr => {
+                    const contenido = tr.textContent.toLowerCase();
+                    tr.style.display = (!texto || contenido.includes(texto)) ? '' : 'none';
+                });
+                // Abrir acordeones que tienen resultados visibles
+                document.querySelectorAll('#vista-usuarios details').forEach(det => {
+                    if (!texto) { det.removeAttribute('open'); return; }
+                    const tieneVisible = [...det.querySelectorAll('tbody tr')].some(tr => tr.style.display !== 'none');
+                    if (tieneVisible) det.setAttribute('open', ''); else det.removeAttribute('open');
+                });
+            });
+        }
+
         // --- MOTOR DEL MODAL DE USUARIOS (ADMINISTRACIÓN) ---
         const btnAbrirUsuario = document.getElementById('btn-abrir-usuarios');
         const modalUsuarios = document.getElementById('modal-usuarios');
@@ -4177,6 +4243,43 @@ if (file_exists($archivo_postulaciones)) {
             }
             return true;
         }
+
+        // --- TOAST SYSTEM ---
+        (function() {
+            const container = document.createElement('div');
+            container.id = 'toast-container';
+            document.body.appendChild(container);
+            function showToast(tipo, texto) {
+                const t = document.createElement('div');
+                t.className = 'toast toast-' + tipo;
+                t.textContent = texto;
+                container.appendChild(t);
+                setTimeout(() => { t.classList.add('saliendo'); t.addEventListener('animationend', () => t.remove()); }, 4500);
+            }
+            <?php if ($toast): ?>
+            showToast('<?php echo $toast['tipo']; ?>', <?php echo json_encode($toast['texto']); ?>);
+            <?php endif; ?>
+        })();
+
+        // --- CONFIRM MODAL ---
+        (function() {
+            const overlay = document.createElement('div');
+            overlay.id = 'confirm-overlay';
+            overlay.innerHTML = '<div id="confirm-box"><div class="confirm-icon">&#x26A0;&#xFE0F;</div><div class="confirm-msg" id="confirm-msg-text"></div><div class="confirm-btns"><button id="btn-confirm-ok">Confirmar</button><button id="btn-confirm-cancel">Cancelar</button></div></div>';
+            document.body.appendChild(overlay);
+            let _cb = null;
+            document.getElementById('btn-confirm-ok').addEventListener('click', () => { overlay.classList.remove('activo'); if (_cb) { _cb(); _cb = null; } });
+            document.getElementById('btn-confirm-cancel').addEventListener('click', () => { overlay.classList.remove('activo'); _cb = null; });
+            overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.classList.remove('activo'); _cb = null; } });
+            window.appConfirm = function(e, form, msg) {
+                e.preventDefault();
+                if (form._confirmed) { form._confirmed = false; return true; }
+                document.getElementById('confirm-msg-text').textContent = msg;
+                overlay.classList.add('activo');
+                _cb = () => { form._confirmed = true; form.submit(); };
+                return false;
+            };
+        })();
 
         // --- MOTOR PARA REPROGRAMAR POSTULACIONES LABORALES ---
         document.querySelectorAll('.btn-editar-postulacion').forEach(btn => {

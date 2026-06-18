@@ -14,23 +14,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $postre = trim($_POST['postre'] ?? '');
 
     if (!empty($plato_principal) && !empty($opcion_vegetariana) && !empty($postre)) {
-        
-        $menu_actualizado = [
-            "plato_principal" => $plato_principal,
-            "opcion_vegetariana" => $opcion_vegetariana,
-            "postre" => $postre
-        ];
-
-        // MAGIA DE RUTAS: Salimos de la carpeta "procesos" y entramos a "data"
-        $archivo_menu = __DIR__ . '/../data/menu.json';
-        
-        // Por las dudas, si la carpeta data no existe, la crea
-        if (!file_exists(__DIR__ . '/../data')) {
-            mkdir(__DIR__ . '/../data', 0777, true);
+        require_once 'conexion.php';
+        try {
+            $stmt = $pdo->prepare("UPDATE menu_comedor SET plato_principal = :pp, opcion_vegetariana = :ov, postre = :postre WHERE id = 1");
+            $stmt->execute([
+                ':pp'     => $plato_principal,
+                ':ov'     => $opcion_vegetariana,
+                ':postre' => $postre
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error guardando menú: " . $e->getMessage());
         }
-
-        // Guardamos el JSON de forma ordenada
-        file_put_contents($archivo_menu, json_encode($menu_actualizado, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     }
 
     // Lo devolvemos al dashboard en la pestaña del comedor

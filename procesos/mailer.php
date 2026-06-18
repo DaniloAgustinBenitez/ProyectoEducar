@@ -1,52 +1,41 @@
 <?php
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
+require_once 'credenciales.php';
 
-require __DIR__ . '/../PHPMailer/Exception.php';
-require __DIR__ . '/../PHPMailer/PHPMailer.php';
-require __DIR__ . '/../PHPMailer/SMTP.php';
+function enviar_correo_real(string $destinatario, string $asunto, string $cuerpo): bool {
+    $payload = json_encode([
+        'sender'      => ['name' => BREVO_FROM_NAME, 'email' => BREVO_FROM_EMAIL],
+        'to'          => [['email' => $destinatario]],
+        'subject'     => $asunto,
+        'textContent' => $cuerpo
+    ]);
 
-function enviar_correo_real($destinatario, $asunto, $cuerpo) {
-    $mail = new PHPMailer(true);
+    $ch = curl_init('https://api.brevo.com/v3/smtp/email');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $payload,
+        CURLOPT_HTTPHEADER     => [
+            'accept: application/json',
+            'api-key: ' . BREVO_API_KEY,
+            'content-type: application/json'
+        ]
+    ]);
 
-    try {
-        // Llamamos al archivo secreto
-        require_once 'credenciales.php';
+    $response  = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curl_error = curl_error($ch);
+    curl_close($ch);
 
-        $mail->isSMTP();
-        $mail->Host       = 'smtp-relay.brevo.com'; 
-        $mail->SMTPAuth   = true;
-        $mail->AuthType   = 'LOGIN'; 
-        
-        // Usamos las variables en lugar del texto
-        $mail->Username   = BREVO_USER; 
-        $mail->Password   = BREVO_PASS;
-        
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = 587; 
-
-        // Salvavidas XAMPP
-        $mail->SMTPOptions = array(
-            'ssl' => array(
-                'verify_peer' => false,
-                'verify_peer_name' => false,
-                'allow_self_signed' => true
-            )
-        );
-
-        $mail->setFrom('javiergomez2001@gmail.com', 'Educar para Transformar');
-        $mail->addAddress($destinatario);
-
-        $mail->isHTML(false);
-        $mail->Subject = utf8_decode($asunto);
-        $mail->Body    = utf8_decode($cuerpo);
-
-        $mail->send();
-        return true;
-        
-    } catch (Exception $e) {
-        error_log("Error enviando correo a $destinatario. Error: {$mail->ErrorInfo}");
+    if ($curl_error) {
+        error_log("Error cURL al enviar correo a $destinatario: $curl_error");
         return false;
     }
+
+    if ($http_code < 200 || $http_code >= 300) {
+        error_log("Brevo API rechazó el correo a $destinatario. HTTP $http_code. Respuesta: $response");
+        return false;
+    }
+
+    return true;
 }
 ?>

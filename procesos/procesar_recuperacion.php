@@ -6,40 +6,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $usuario = trim($_POST['usuario_recuperar'] ?? '');
 
     if (!empty($usuario)) {
-        $archivo_usuarios = __DIR__ . '/../data/usuarios.json';
-        $usuarios = file_exists($archivo_usuarios) ? json_decode(file_get_contents($archivo_usuarios), true) : [];
+        require_once __DIR__ . '/conexion.php';
+        try {
+            // 1. Verificamos si el usuario realmente existe en el sistema
+            $stmt_check = $pdo->prepare("SELECT id FROM usuarios WHERE LOWER(username) = LOWER(:user) LIMIT 1");
+            $stmt_check->execute([':user' => $usuario]);
 
-        // 1. Verificamos si el usuario realmente existe en el sistema
-        $existe = false;
-        foreach ($usuarios as $u) {
-            if (strtolower($u['usuario']) === strtolower($usuario)) {
-                $existe = true;
-                break;
-            }
-        }
+            if ($stmt_check->fetch()) {
+                // 2. Evitamos que spammeen el botón (UNIQUE KEY en la tabla lo garantiza igual)
+                $stmt_ya = $pdo->prepare("SELECT id FROM recuperaciones WHERE usuario = :user LIMIT 1");
+                $stmt_ya->execute([':user' => $usuario]);
 
-        if ($existe) {
-            $archivo_rec = __DIR__ . '/../data/recuperaciones.json';
-            if (!file_exists(__DIR__ . '/../data')) mkdir(__DIR__ . '/../data', 0777, true);
-            $recuperaciones = file_exists($archivo_rec) ? json_decode(file_get_contents($archivo_rec), true) : [];
-
-            // 2. Evitamos que un alumno spammee el botón mil veces
-            $ya_pedido = false;
-            foreach ($recuperaciones as $r) {
-                if ($r['usuario'] === $usuario) {
-                    $ya_pedido = true;
-                    break;
+                // 3. Guardamos el pedido de auxilio
+                if (!$stmt_ya->fetch()) {
+                    $stmt_ins = $pdo->prepare("INSERT INTO recuperaciones (usuario, fecha) VALUES (:user, :fecha)");
+                    $stmt_ins->execute([':user' => $usuario, ':fecha' => date('Y-m-d H:i:s')]);
                 }
             }
-
-            // 3. Guardamos el pedido de auxilio
-            if (!$ya_pedido) {
-                $recuperaciones[] = [
-                    'usuario' => $usuario,
-                    'fecha' => date('d-m-Y H:i')
-                ];
-                file_put_contents($archivo_rec, json_encode($recuperaciones, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-            }
+        } catch (PDOException $e) {
+            error_log("Error en recuperación de clave: " . $e->getMessage());
         }
     }
     // Por seguridad, siempre mostramos éxito, exista o no el usuario (para evitar escaneo de cuentas)

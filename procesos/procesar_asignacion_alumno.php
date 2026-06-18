@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'conexion.php';
 
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
     header('Location: ../dashboard.php');
@@ -7,56 +8,41 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $accion = $_POST['accion'] ?? '';
-    $curso_clave = $_POST['curso_clave'] ?? '';
-    $alumno_nombre = trim($_POST['alumno_nombre'] ?? '');
+    $accion        = $_POST['accion'] ?? '';
+    $curso_clave   = $_POST['curso_clave'] ?? '';
+    $alumno_nombre = $_POST['alumno_nombre'] ?? '';
 
-    if (!empty($curso_clave) && !empty($alumno_nombre)) {
-        $archivo_alumnos_cursos = __DIR__ . '/../data/alumnos_cursos.json';
-        $alumnos_por_curso = file_exists($archivo_alumnos_cursos) ? json_decode(file_get_contents($archivo_alumnos_cursos), true) : [];
+    if (!empty($accion) && !empty($curso_clave) && !empty($alumno_nombre)) {
+        try {
+            if ($accion === 'asignar') {
+                // Forzamos que se borre de cualquier asignación anterior para evitar duplicados
+                $stmt_del = $pdo->prepare("DELETE FROM matricula WHERE alumno_nombre = :alumno");
+                $stmt_del->execute([':alumno' => $alumno_nombre]);
 
-        // Normalizamos la estructura por si hay valores corruptos
-        foreach ($alumnos_por_curso as $key => $lista) {
-            if (!is_array($lista)) {
-                $alumnos_por_curso[$key] = [];
+                // Lo registramos en su curso actual
+                $stmt = $pdo->prepare("INSERT INTO matricula (alumno_nombre, curso_clave) VALUES (:alumno, :curso)");
+                $stmt->execute([
+                    ':alumno' => $alumno_nombre,
+                    ':curso'  => $curso_clave
+                ]);
+                
+                header('Location: ../dashboard.php?vista=vista-asignar-alumnos&msj=alumno_asignado');
+                exit;
+            } elseif ($accion === 'quitar') {
+                $stmt = $pdo->prepare("DELETE FROM matricula WHERE alumno_nombre = :alumno AND curso_clave = :curso");
+                $stmt->execute([
+                    ':alumno' => $alumno_nombre,
+                    ':curso'  => $curso_clave
+                ]);
+                
+                header('Location: ../dashboard.php?vista=vista-asignar-alumnos&msj=alumno_removido');
+                exit;
             }
-        }
-
-        if ($accion === 'asignar') {
-            // 1. Limpieza preventiva: Quitamos al alumno de cualquier otro curso/año previo
-            foreach ($alumnos_por_curso as $key => $lista) {
-                $alumnos_por_curso[$key] = array_values(array_filter($lista, function($item) use ($alumno_nombre) {
-                    return strtolower(trim($item)) !== strtolower($alumno_nombre);
-                }));
-            }
-
-            // 2. Lo agregamos al listado del nuevo curso seleccionado
-            if (!isset($alumnos_por_curso[$curso_clave])) {
-                $alumnos_por_curso[$curso_clave] = [];
-            }
-            
-            // Evitamos duplicarlo por las dudas
-            if (!in_array($alumno_nombre, $alumnos_por_curso[$curso_clave])) {
-                $alumnos_por_curso[$curso_clave][] = $alumno_nombre;
-            }
-
-            file_put_contents($archivo_alumnos_cursos, json_encode($alumnos_por_curso, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-            header('Location: ../dashboard.php?vista=vista-asignar-alumnos&msj=alumno_asignado');
-            exit;
-        } 
-        elseif ($accion === 'quitar') {
-            if (isset($alumnos_por_curso[$curso_clave])) {
-                $alumnos_por_curso[$curso_clave] = array_values(array_filter($alumnos_por_curso[$curso_clave], function($item) use ($alumno_nombre) {
-                    return strtolower(trim($item)) !== strtolower($alumno_nombre);
-                }));
-                file_put_contents($archivo_alumnos_cursos, json_encode($alumnos_por_curso, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-            }
-            header('Location: ../dashboard.php?vista=vista-asignar-alumnos&msj=alumno_removido');
-            exit;
+        } catch (PDOException $e) {
+            error_log("Error en procesar_asignacion_alumno: " . $e->getMessage());
         }
     }
 }
 
 header('Location: ../dashboard.php?vista=vista-asignar-alumnos');
 exit;
-?>

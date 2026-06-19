@@ -1,9 +1,9 @@
 <?php
 // Configuración de la base de datos (Entorno Local - XAMPP)
-$host = 'localhost';
-$dbname = 'educar_db';
-$username = 'root'; // XAMPP usa 'root' por defecto
-$password = '';     // XAMPP no tiene contraseña por defecto
+$host = 'sql101.infinityfree.com';
+$dbname = 'if0_42106332_gestion_colegio';
+$username = 'if0_42106332'; // XAMPP usa 'root' por defecto
+$password = 'k0o8QJSnCG8';     // XAMPP no tiene contraseña por defecto
 
 try {
     // Creamos la conexión usando PDO

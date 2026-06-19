@@ -482,6 +482,7 @@ footer strong { color: white; }
     .form-card    { padding: 32px 28px; }
 }
 
+
 /* RESPONSIVE — móvil */
 @media (max-width: 650px) {
     .campo-grupo,

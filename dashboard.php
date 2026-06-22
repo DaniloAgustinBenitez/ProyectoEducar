@@ -376,9 +376,10 @@ $stat_mis_docs     = count(array_filter($mis_documentos, fn($d) => !empty($d)));
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Educativo | Panel Principal</title>
-    <link rel="stylesheet" href="style/dashboard.css">
+    <link rel="stylesheet" href="Style/dashboard.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="icon" href="img/logo.png">
 </head>
 <body>
 

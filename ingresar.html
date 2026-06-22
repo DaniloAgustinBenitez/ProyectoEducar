@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Acceso | Educar para Transformar</title>
+    <link href="index.css" rel="stylesheet">
+    <style>
+        section { transform: none !important; }
+        section > * { transform: none !important; }
+        .portal-contenido {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .roles-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+        @media (max-width: 900px) { .roles-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 500px) { .roles-grid { grid-template-columns: 1fr; } }
+        .rol-card {
+            background: white;
+            padding: 30px 20px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+            transition: transform 0.3s;
+        }
+        .rol-card:hover { transform: translateY(-5px); }
+        .rol-card .rol-icono { font-size: 2.5rem; margin-bottom: 12px; }
+        .rol-card h4 { color: var(--azul-primario); font-size: 1rem; margin-bottom: 6px; }
+        .rol-card p { color: #777; font-size: 0.82rem; line-height: 1.4; margin: 0; }
+        .rol-card:nth-child(1) { border-top: 4px solid var(--verde); }
+        .rol-card:nth-child(2) { border-top: 4px solid var(--celeste); }
+        .rol-card:nth-child(3) { border-top: 4px solid var(--naranja); }
+        .rol-card:nth-child(4) { border-top: 4px solid var(--rosa); }
+        .rol-card:nth-child(5) { border-top: 4px solid var(--violeta); }
+        .portal-acceso {
+            background: white;
+            max-width: 450px;
+            margin: 0 auto;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border-top: 6px solid var(--azul-primario);
+        }
+        .portal-acceso h3 { color: var(--azul-primario); margin-bottom: 15px; font-size: 1.3rem; }
+        .portal-acceso p { color: #666; font-size: 0.95rem; line-height: 1.6; margin-bottom: 25px; }
+    </style>
+</head>
+<body>
+
+    <div class="palette-stripe" aria-hidden="true">
+        <span class="s1"></span><span class="s2"></span><span class="s3"></span>
+        <span class="s4"></span><span class="s5"></span><span class="s6"></span>
+    </div>
+
+    <header>
+        <div class="logo-container">
+            <img src="img/logo.png" alt="Logo Educar para Transformar">
+            <h1>Educar para Transformar</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="quienes-somos.html">Quiénes Somos</a></li>
+                <li><a href="contacto.html">Contacto</a></li>
+                <li><a href="ubicacion.html">Ubicación</a></li>
+                <li><a href="inscripcion.html">Admisiones</a></li>
+                <li><a href="empleo.html">Empleo</a></li>
+                <li><a href="ingresar.html">Ingresar</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section id="ingresar" style="padding-top: 140px; min-height: 100vh; background-color: var(--azul-primario); display: flex; flex-direction: column; justify-content: center; align-items: center;">
+
+        <div class="portal-contenido oculto">
+            <h2 style="color: white; border-bottom: 3px solid var(--verde); margin-bottom: 15px;">Portal del Sistema</h2>
+            <p style="color: rgba(255,255,255,0.75); font-size: 1.05rem; max-width: 600px; margin: 0 auto 40px;">
+                Nuestra plataforma de gestión educativa integral conecta a toda la comunidad del colegio. Cada rol accede a las herramientas diseñadas para su función.
+            </p>
+
+            <div class="roles-grid">
+                <div class="rol-card">
+                    <div class="rol-icono">🎒</div>
+                    <h4>Alumnos</h4>
+                    <p>Calificaciones, asistencia, actividades y documentación.</p>
+                </div>
+                <div class="rol-card">
+                    <div class="rol-icono">👨‍👩‍👧</div>
+                    <h4>Tutores</h4>
+                    <p>Seguimiento de hijos, documentos y comunicación con el colegio.</p>
+                </div>
+                <div class="rol-card">
+                    <div class="rol-icono">👩‍🏫</div>
+                    <h4>Profesores</h4>
+                    <p>Publicar actividades, cargar calificaciones y evaluar entregas.</p>
+                </div>
+                <div class="rol-card">
+                    <div class="rol-icono">📋</div>
+                    <h4>Preceptores</h4>
+                    <p>Control de asistencia diaria y gestión de legajos médicos.</p>
+                </div>
+                <div class="rol-card">
+                    <div class="rol-icono">⚙️</div>
+                    <h4>Administración</h4>
+                    <p>Gestión completa de usuarios, cursos, entrevistas y RRHH.</p>
+                </div>
+            </div>
+
+            <div class="portal-acceso">
+                <h3>Acceso al Sistema</h3>
+                <p>Ingresá con tu usuario y contraseña asignados por la institución.</p>
+                <button class="btn-ingresar" onclick="window.location.href='login.php'" style="width: 100%;">Ingresar a la Plataforma</button>
+            </div>
+        </div>
+
+    </section>
+
+    <script src="index.js" defer></script>
+</body>
+</html>

@@ -151,8 +151,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <button type="submit" class="btn-entrar">INGRESAR</button>
         </form>
 
-        <div style="text-align: center; margin-top: 15px;">
-            <a href="#" id="link-olvido" style="color: var(--azul-primario); text-decoration: none; font-size: 0.9rem;">¿Olvidaste tu contraseña?</a>
+        <div style="text-align: center; margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <a href="ingresar.html" style="color: #888; text-decoration: none; font-size: 0.85rem; transition: color 0.3s;" onmouseover="this.style.color='var(--azul-primario)'" onmouseout="this.style.color='#888'">← Volver</a>
+            <a href="#" id="link-olvido" style="color: var(--azul-primario); text-decoration: none; font-size: 0.85rem;">¿Olvidaste tu contraseña?</a>
         </div>
 
         <div id="caja-recuperacion" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed #ccc;">

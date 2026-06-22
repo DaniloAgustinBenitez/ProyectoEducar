@@ -12,22 +12,121 @@
         <span class="s4"></span><span class="s5"></span><span class="s6"></span>
     </div>
 
+    <style>
+        nav ul { list-style: none; display: flex; gap: 20px; }
+        nav ul li a { text-decoration: none; color: white; font-weight: 600; font-size: 0.9rem; transition: color 0.3s; }
+        nav ul li a:hover { color: var(--celeste); }
+        .info-rrhh {
+            background: var(--fondo-claro);
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 30px;
+            border-left: 5px solid var(--rosa);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-around;
+            text-align: left;
+        }
+        .info-rrhh-col { flex: 1; min-width: 200px; }
+        .info-rrhh-col h4 { color: var(--azul-primario); margin: 0 0 10px 0; }
+        .info-rrhh-col ul { color: #555; font-size: 0.95rem; padding-left: 20px; margin: 0; line-height: 1.8; }
+        .valores-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin-bottom: 35px; }
+        .valor-card { background: white; padding: 25px 18px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; transition: transform 0.3s; }
+        .valor-card:hover { transform: translateY(-4px); }
+        .valor-card .valor-icono { font-size: 2.2rem; margin-bottom: 10px; }
+        .valor-card h4 { color: var(--azul-primario); font-size: 1rem; margin-bottom: 6px; }
+        .valor-card p { color: #777; font-size: 0.85rem; line-height: 1.4; margin: 0; }
+        .separador-form { text-align: center; margin: 35px 0 25px; }
+        .separador-form h3 { color: var(--azul-primario); font-size: 1.3rem; margin-bottom: 8px; }
+        .separador-form p { color: #888; font-size: 0.95rem; }
+        .fade-in {
+            opacity: 0;
+            transform: translateY(60px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+
     <header>
         <div class="logo-container">
             <img src="img/logo.png" alt="Logo Educar para Transformar">
             <h1>Educar para Transformar</h1>
         </div>
-        <a href="index.html" class="btn-volver">← Volver al inicio</a>
+        <nav>
+            <ul>
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="quienes-somos.html">Quiénes Somos</a></li>
+                <li><a href="contacto.html">Contacto</a></li>
+                <li><a href="ubicacion.html">Ubicación</a></li>
+                <li><a href="inscripcion.html">Admisiones</a></li>
+                <li><a href="empleo.html">Empleo</a></li>
+                <li><a href="ingresar.html">Ingresar</a></li>
+            </ul>
+        </nav>
     </header>
 
-    <section class="page-hero" style="background-color: #f0f4f8;">
-        <div class="hero-badge" style="background-color: var(--rosa); color: white;">💼 Oportunidades Laborales</div>
-        <h2><span>Convocatoria Docente y Administrativa</span></h2>
-        <p>Buscamos profesionales comprometidos con la transformación educativa para sumarse a nuestro proyecto institucional de cara al ciclo lectivo 2027.</p>
+    <section class="page-hero" style="background: linear-gradient(135deg, var(--rosa) 0%, var(--violeta) 100%);">
+        <div class="hero-badge">💼 RRHH 2027</div>
+        <h2><span>Trabajá con Nosotros</span></h2>
+        <p>Estamos conformando nuestro equipo de docentes, preceptores y personal administrativo. Si te apasiona la educación, nos encantaría conocerte.</p>
     </section>
 
-    <main class="main-content">
-        <div class="form-card" style="max-width: 650px; margin: auto;">
+    <main class="main-content" style="max-width: 800px;">
+
+        <div class="valores-grid fade-in">
+            <div class="valor-card">
+                <div class="valor-icono">🌱</div>
+                <h4>Crecimiento</h4>
+                <p>Capacitaciones continuas y plan de carrera profesional.</p>
+            </div>
+            <div class="valor-card">
+                <div class="valor-icono">🤝</div>
+                <h4>Comunidad</h4>
+                <p>Formá parte de un equipo comprometido con la transformación educativa.</p>
+            </div>
+            <div class="valor-card">
+                <div class="valor-icono">🏫</div>
+                <h4>Instalaciones</h4>
+                <p>Campus moderno con laboratorios, gimnasio, pileta y más.</p>
+            </div>
+            <div class="valor-card">
+                <div class="valor-icono">💡</div>
+                <h4>Innovación</h4>
+                <p>Proyecto pedagógico con tecnología, idiomas y jornada extendida.</p>
+            </div>
+        </div>
+
+        <div class="info-rrhh fade-in">
+            <div class="info-rrhh-col">
+                <h4>👩‍🏫 Perfiles Buscados</h4>
+                <ul>
+                    <li>Docentes (Inicial, Primaria y Secundaria)</li>
+                    <li>Preceptores y Auxiliares</li>
+                    <li>Personal Administrativo y Maestranza</li>
+                    <li>Equipo Directivo y Coordinación</li>
+                </ul>
+            </div>
+            <div class="info-rrhh-col">
+                <h4>📌 Requisitos Base</h4>
+                <ul>
+                    <li>Título habilitante (según el cargo)</li>
+                    <li>Currículum Vitae en formato PDF</li>
+                    <li>Disponibilidad para entrevistas presenciales</li>
+                    <li>Compromiso con la educación de calidad</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="separador-form fade-in">
+            <h3>¿Te interesa? Envianos tu CV</h3>
+            <p>Completá el formulario y nuestro equipo de RRHH se pondrá en contacto.</p>
+        </div>
+
+        <div class="form-card fade-in" style="max-width: 650px; margin: auto;">
             
             <form action="procesos/procesar_postulacion.php" method="POST" enctype="multipart/form-data">
                 
@@ -85,6 +184,32 @@
         if (urlParams.get('error') === 'archivo') {
             alert('⚠️ Error: El archivo adjunto debe ser estrictamente un PDF válido.');
         }
+
+        // Validación de tipo de archivo
+        const inputCV = document.querySelector('input[name="cv"]');
+        if (inputCV) {
+            inputCV.addEventListener('change', function() {
+                if (this.files[0]) {
+                    const ext = this.files[0].name.toLowerCase().substring(this.files[0].name.lastIndexOf('.'));
+                    if (ext !== '.pdf') {
+                        alert('Solo se permite archivos PDF. El archivo seleccionado (' + ext + ') no es válido.');
+                        this.value = '';
+                    }
+                }
+            });
+        }
+    </script>
+    <script>
+        setTimeout(function() {
+            document.querySelectorAll('.fade-in').forEach(function(el) {
+                var obs = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(e) {
+                        if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+                    });
+                }, { threshold: 0.1 });
+                obs.observe(el);
+            });
+        }, 100);
     </script>
 </body>
 </html>

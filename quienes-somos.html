@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiénes Somos | Educar para Transformar</title>
+    <link href="index.css" rel="stylesheet">
+    <style>
+        body { background-color: #f0f2f5; }
+        section { transform: none !important; }
+        section > * { transform: none !important; }
+        #quienes-somos h2 { color: var(--azul-primario); }
+        .intro-text { color: var(--texto-oscuro); }
+
+        .intro-bloque {
+            max-width: 800px;
+            margin: 0 auto 50px;
+            text-align: center;
+        }
+        .intro-bloque h2 {
+            display: inline-block;
+            border-bottom: 3px solid var(--celeste);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .intro-bloque p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #555;
+        }
+
+        .galeria-seccion {
+            max-width: 1200px;
+            margin: 0 auto 50px;
+        }
+        .galeria-titulo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .galeria-titulo h3 {
+            color: var(--azul-primario);
+            font-size: 1.4rem;
+            white-space: nowrap;
+        }
+        .galeria-titulo::after {
+            content: '';
+            flex: 1;
+            height: 2px;
+            background: linear-gradient(to right, var(--celeste), transparent);
+        }
+
+        .galeria-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 18px;
+        }
+
+        .galeria-item {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            aspect-ratio: 4 / 3;
+        }
+        .galeria-item:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+        }
+        .galeria-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.4s;
+        }
+        .galeria-item:hover img {
+            transform: scale(1.08);
+        }
+        .galeria-item .galeria-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 12px 15px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.75));
+            color: white;
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .galeria-label::after {
+            content: '🔍 Ver más';
+            font-size: 0.75rem;
+            font-weight: 400;
+            opacity: 0;
+            transition: opacity 0.3s;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+        .galeria-item:hover .galeria-label::after {
+            opacity: 1;
+        }
+
+        /* MODAL CARRUSEL */
+        .modal-galeria {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2000;
+            background-color: rgba(0,0,0,0.85);
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .modal-galeria.modal-activo { opacity: 1; visibility: visible; }
+        .modal-galeria .modal-inner {
+            background: white;
+            border-radius: 16px;
+            max-width: 550px;
+            width: 92%;
+            overflow: hidden;
+            position: relative;
+            animation: popIn 0.3s ease;
+        }
+        @keyframes popIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal-galeria .carousel-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 10;
+            overflow: hidden;
+        }
+        .modal-galeria .carousel-wrap img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .modal-galeria .carousel-wrap img.slide-activa { opacity: 1; }
+        .modal-galeria .carousel-dots {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+        }
+        .modal-galeria .carousel-dots span {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .modal-galeria .carousel-dots span.dot-activo { background: white; }
+        .modal-galeria .car-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.4);
+            color: white;
+            border: none;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background 0.3s;
+            z-index: 2;
+        }
+        .modal-galeria .car-btn:hover { background: rgba(0,0,0,0.7); }
+        .modal-galeria .car-btn.car-prev { left: 10px; }
+        .modal-galeria .car-btn.car-next { right: 10px; }
+        .modal-galeria .modal-info {
+            padding: 25px 28px;
+            text-align: center;
+        }
+        .modal-galeria .modal-info h4 {
+            color: var(--azul-primario);
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+        }
+        .modal-galeria .modal-info p {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .modal-galeria .btn-cerrar-gal {
+            position: absolute;
+            top: -12px; right: -12px;
+            width: 34px; height: 34px;
+            background: var(--azul-primario);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 3;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+            transition: background 0.3s, transform 0.2s;
+        }
+        .modal-galeria .btn-cerrar-gal:hover { background: var(--naranja); transform: scale(1.1); }
+
+        @media (max-width: 768px) {
+            .galeria-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        }
+        @media (max-width: 480px) {
+            .galeria-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="palette-stripe" aria-hidden="true">
+        <span class="s1"></span><span class="s2"></span><span class="s3"></span>
+        <span class="s4"></span><span class="s5"></span><span class="s6"></span>
+    </div>
+
+    <header>
+        <div class="logo-container">
+            <img src="img/logo.png" alt="Logo Educar para Transformar">
+            <h1>Educar para Transformar</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="quienes-somos.html">Quiénes Somos</a></li>
+                <li><a href="contacto.html">Contacto</a></li>
+                <li><a href="ubicacion.html">Ubicación</a></li>
+                <li><a href="inscripcion.html">Admisiones</a></li>
+                <li><a href="empleo.html">Empleo</a></li>
+                <li><a href="ingresar.html">Ingresar</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section id="quienes-somos" style="padding-top: 130px; background-image: none;">
+
+        <div class="intro-bloque oculto">
+            <h2>Quiénes Somos</h2>
+            <p>
+                El centro educativo <strong>"EDUCAR PARA TRANSFORMAR"</strong> es una institución de gestión privada de alta calidad educativa, ubicada en las afueras de la ciudad de Resistencia. Tenemos previsto abrir nuestras puertas e iniciar actividades en <strong>marzo de 2027</strong>.
+            </p>
+        </div>
+
+        <!-- OFERTA EDUCATIVA -->
+        <div class="galeria-seccion oculto">
+            <div class="galeria-titulo"><h3>🎓 Oferta Educativa</h3></div>
+            <p style="color: #666; margin-bottom: 20px;">Niveles con jornada extendida. <strong>Idiomas:</strong> Inglés, Portugués y Francés.</p>
+            <div class="galeria-grid">
+                <div class="galeria-item" data-target="modal-ini">
+                    <img src="img/inicial.jpg" alt="Nivel Inicial">
+                    <div class="galeria-label">Nivel Inicial</div>
+                </div>
+                <div class="galeria-item" data-target="modal-prim">
+                    <img src="img/primario.jfif" alt="Nivel Primario">
+                    <div class="galeria-label">Nivel Primario</div>
+                </div>
+                <div class="galeria-item" data-target="modal-sec">
+                    <img src="img/secundario.jpg" alt="Nivel Secundario">
+                    <div class="galeria-label">Nivel Secundario</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INSTALACIONES -->
+        <div class="galeria-seccion oculto">
+            <div class="galeria-titulo"><h3>🏫 Instalaciones</h3></div>
+            <div class="galeria-grid">
+                <div class="galeria-item" data-target="modal-lab">
+                    <img src="img/laboratorio.jfif" alt="Laboratorios">
+                    <div class="galeria-label">Laboratorios</div>
+                </div>
+                <div class="galeria-item" data-target="modal-pil">
+                    <img src="img/pileta.jpg" alt="Pileta de Natación">
+                    <div class="galeria-label">Pileta de Natación</div>
+                </div>
+                <div class="galeria-item" data-target="modal-can">
+                    <img src="img/futbolcancha.jpg" alt="Canchas de Fútbol">
+                    <div class="galeria-label">Canchas de Fútbol</div>
+                </div>
+                <div class="galeria-item" data-target="modal-atl">
+                    <img src="img/pistaatletismo.jfif" alt="Pista de Atletismo">
+                    <div class="galeria-label">Pista de Atletismo</div>
+                </div>
+                <div class="galeria-item" data-target="modal-gim">
+                    <img src="img/gimnasio.jfif" alt="Gimnasio Cubierto">
+                    <div class="galeria-label">Gimnasio Cubierto</div>
+                </div>
+                <div class="galeria-item" data-target="modal-com">
+                    <img src="img/comedor.jpg" alt="Comedor">
+                    <div class="galeria-label">Comedor</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DEPORTES Y ACTIVIDADES -->
+        <div class="galeria-seccion oculto">
+            <div class="galeria-titulo"><h3>🏀 Deportes y Actividades</h3></div>
+            <div class="galeria-grid">
+                <div class="galeria-item" data-target="modal-atle">
+                    <img src="img/atletismo.jpg" alt="Atletismo">
+                    <div class="galeria-label">Atletismo</div>
+                </div>
+                <div class="galeria-item" data-target="modal-nat">
+                    <img src="img/natacion.jpg" alt="Natación">
+                    <div class="galeria-label">Natación</div>
+                </div>
+                <div class="galeria-item" data-target="modal-fut">
+                    <img src="img/futbol.jpg" alt="Fútbol">
+                    <div class="galeria-label">Fútbol</div>
+                </div>
+                <div class="galeria-item" data-target="modal-bas">
+                    <img src="img/basquet.jpg" alt="Básquet">
+                    <div class="galeria-label">Básquet</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SERVICIOS -->
+        <div class="galeria-seccion oculto">
+            <div class="galeria-titulo"><h3>🛎️ Servicios Exclusivos</h3></div>
+            <div class="galeria-grid">
+                <div class="galeria-item" data-target="modal-apo">
+                    <img src="img/apoyo.jpg" alt="Apoyo Estudiantil">
+                    <div class="galeria-label">Apoyo Estudiantil</div>
+                </div>
+                <div class="galeria-item" data-target="modal-tra">
+                    <img src="img/traslado.jpg" alt="Micros de Traslado">
+                    <div class="galeria-label">Micros de Traslado</div>
+                </div>
+                <div class="galeria-item" data-target="modal-come">
+                    <img src="img/comedor.jpg" alt="Comedor">
+                    <div class="galeria-label">Servicio de Comedor</div>
+                </div>
+                <div class="galeria-item" data-target="modal-enf">
+                    <img src="img/enfermeria.jpg" alt="Enfermería">
+                    <div class="galeria-label">Enfermería Permanente</div>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- MODALES CON CARRUSEL -->
+    <div class="modal-galeria" id="modal-ini"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/inicial.jpg" class="slide-activa" alt="Inicial"><img src="img/apoyo.jpg" alt="Aulas"><img src="img/colegio2.jpg" alt="Patio">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Nivel Inicial</h4><p>Salas de 2 a 5 años con jornada extendida. Talleres de arte, música y juego dirigido.</p></div>
+    </div></div>
+
+    <div class="modal-galeria" id="modal-prim"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/primario.jfif" class="slide-activa" alt="Primario"><img src="img/laboratorio.jfif" alt="Clase"><img src="img/apoyo.jpg" alt="Apoyo">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Nivel Primario</h4><p>De 1° a 6° grado. Inglés intensivo, robótica y deportes dentro del horario escolar.</p></div>
+    </div></div>
+
+    <div class="modal-galeria" id="modal-sec"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/secundario.jpg" class="slide-activa" alt="Secundario"><img src="img/laboratorio.jfif" alt="Lab"><img src="img/colegio.jpg" alt="Campus">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Nivel Secundario</h4><p>De 1° a 5° año. Orientación en Ciencias Naturales y Sociales. Preparación universitaria.</p></div>
+    </div></div>
+
+    <div class="modal-galeria" id="modal-lab"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/laboratorio.jfif" class="slide-activa" alt="Lab 1"><img src="img/secundario.jpg" alt="Lab 2">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Laboratorios</h4><p>Equipados con tecnología moderna para prácticas de Física, Química y Biología.</p></div>
+    </div></div>
+
+    <div class="modal-galeria" id="modal-pil"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/pileta.jpg" class="slide-activa" alt="Pileta 1"><img src="img/natacion.jpg" alt="Pileta 2">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Piscinas Semi-profesionales</h4><p>Pileta climatizada para natación curricular y actividades deportivas.</p></div>
+    </div></div>
+
+    <div class="modal-galeria" id="modal-can"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/futbolcancha.jpg" class="slide-activa" alt="Cancha 1"><img src="img/futbol.jpg" alt="Cancha 2">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Canchas de Fútbol</h4><p>Campos de juego reglamentarios con césped sintético para entrenamiento y torneos.</p></div>
+    </div></div>
+
+    <div class="modal-galeria" id="modal-atl"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/pistaatletismo.jfif" class="slide-activa" alt="Pista 1"><img src="img/atletismo.jpg" alt="Pista 2">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Pista de Atletismo</h4><p>Pista profesional para práctica de velocidad, fondo y saltos.</p></div>
+    </div></div>
+
+    <div class="modal-galeria" id="modal-gim"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/gimnasio.jfif" class="slide-activa" alt="Gimnasio 1"><img src="img/basquet.jpg" alt="Gimnasio 2"><img src="img/voley.jfif" alt="Gimnasio 3">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Gimnasio Cubierto</h4><p>Espacio techado para educación física, básquet, vóley y actividades en días de lluvia.</p></div>
+    </div></div>
+
+    <div class="modal-galeria" id="modal-com"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/comedor.jpg" class="slide-activa" alt="Comedor 1"><img src="img/colegio2.jpg" alt="Comedor 2">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Comedor</h4><p>Comedor con capacidad para todos los turnos y menú nutritivo supervisado.</p></div>
+    </div></div>
+
+    <div class="modal-galeria" id="modal-atle"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/atletismo.jpg" class="slide-activa" alt="Atletismo 1"><img src="img/pistaatletismo.jfif" alt="Atletismo 2">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Atletismo</h4><p>Programa deportivo de atletismo con entrenadores especializados.</p></div>
+    </div></div>
+
+    <div class="modal-galeria" id="modal-nat"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/natacion.jpg" class="slide-activa" alt="Natación 1"><img src="img/pileta.jpg" alt="Natación 2">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Natación</h4><p>Clases de natación para todos los niveles como parte del programa deportivo.</p></div>
+    </div></div>
+
+    <div class="modal-galeria" id="modal-fut"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/futbol.jpg" class="slide-activa" alt="Fútbol 1"><img src="img/futbolcancha.jpg" alt="Fútbol 2">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Fútbol</h4><p>Escuela de fútbol con participación en torneos intercolegiales.</p></div>
+    </div></div>
+
+    <div class="modal-galeria" id="modal-bas"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/basquet.jpg" class="slide-activa" alt="Básquet 1"><img src="img/gimnasio.jfif" alt="Básquet 2">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Básquet</h4><p>Equipo de básquet con entrenamiento semanal y competencias.</p></div>
+    </div></div>
+
+    <div class="modal-galeria" id="modal-apo"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/apoyo.jpg" class="slide-activa" alt="Apoyo 1"><img src="img/primario.jfif" alt="Apoyo 2">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Apoyo Estudiantil</h4><p>Gabinete pedagógico y psicopedagógico para acompañar a cada alumno.</p></div>
+    </div></div>
+
+    <div class="modal-galeria" id="modal-tra"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/traslado.jpg" class="slide-activa" alt="Traslado 1"><img src="img/colegio.jpg" alt="Traslado 2">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Micros de Traslado</h4><p>Servicio de transporte exclusivo con recorridos por toda la ciudad.</p></div>
+    </div></div>
+
+    <div class="modal-galeria" id="modal-come"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/comedor.jpg" class="slide-activa" alt="Comedor 1"><img src="img/colegio2.jpg" alt="Comedor 2">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Servicio de Comedor</h4><p>Menú diario equilibrado, elaborado con supervisión nutricional.</p></div>
+    </div></div>
+
+    <div class="modal-galeria" id="modal-enf"><div class="modal-inner"><button class="btn-cerrar-gal">X</button>
+        <div class="carousel-wrap"><button class="car-btn car-prev">&#10094;</button><button class="car-btn car-next">&#10095;</button>
+            <img src="img/enfermeria.jpg" class="slide-activa" alt="Enfermería 1"><img src="img/apoyo.jpg" alt="Enfermería 2">
+            <div class="carousel-dots"></div>
+        </div><div class="modal-info"><h4>Enfermería</h4><p>Servicio de enfermería permanente durante toda la jornada escolar.</p></div>
+    </div></div>
+
+    <script src="index.js" defer></script>
+    <script>
+        // Abrir modal desde la galería
+        document.querySelectorAll('.galeria-item').forEach(function(item) {
+            item.addEventListener('click', function() {
+                var modal = document.getElementById(this.getAttribute('data-target'));
+                if (!modal) return;
+                modal.classList.add('modal-activo');
+                initCarousel(modal);
+            });
+        });
+
+        // Cerrar modal
+        document.querySelectorAll('.btn-cerrar-gal').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                this.closest('.modal-galeria').classList.remove('modal-activo');
+            });
+        });
+        document.querySelectorAll('.modal-galeria').forEach(function(m) {
+            m.addEventListener('click', function(e) {
+                if (e.target === m) m.classList.remove('modal-activo');
+            });
+        });
+
+        // Motor del carrusel dentro del modal
+        function initCarousel(modal) {
+            var wrap = modal.querySelector('.carousel-wrap');
+            var slides = wrap.querySelectorAll('img');
+            var dotsContainer = wrap.querySelector('.carousel-dots');
+            var idx = 0;
+
+            // Generar dots
+            dotsContainer.innerHTML = '';
+            slides.forEach(function(_, i) {
+                var dot = document.createElement('span');
+                if (i === 0) dot.classList.add('dot-activo');
+                dot.addEventListener('click', function(e) { e.stopPropagation(); goTo(i); });
+                dotsContainer.appendChild(dot);
+            });
+
+            function goTo(n) {
+                slides.forEach(function(s) { s.classList.remove('slide-activa'); });
+                dotsContainer.querySelectorAll('span').forEach(function(d) { d.classList.remove('dot-activo'); });
+                idx = (n + slides.length) % slides.length;
+                slides[idx].classList.add('slide-activa');
+                dotsContainer.children[idx].classList.add('dot-activo');
+            }
+
+            var prev = wrap.querySelector('.car-prev');
+            var next = wrap.querySelector('.car-next');
+            prev.onclick = function(e) { e.stopPropagation(); goTo(idx - 1); };
+            next.onclick = function(e) { e.stopPropagation(); goTo(idx + 1); };
+
+            goTo(0);
+        }
+    </script>
+</body>
+</html>

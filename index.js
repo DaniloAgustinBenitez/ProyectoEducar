@@ -107,7 +107,7 @@ if (tarjetasCarrusel.length > 0) {
 }
 
 // 5. ACCIÓN: QUÉ PASA AL TOCAR LA FLECHA DERECHA (Adelante)
-btnAdelante.addEventListener('click', function() {
+if (btnAdelante) btnAdelante.addEventListener('click', function() {
     // Le sumamos 1 a nuestro contador
     tarjetaActual = tarjetaActual + 1; 
 
@@ -122,7 +122,7 @@ btnAdelante.addEventListener('click', function() {
 });
 
 // 6. ACCIÓN: QUÉ PASA AL TOCAR LA FLECHA IZQUIERDA (Atrás)
-btnAtras.addEventListener('click', function() {
+if (btnAtras) btnAtras.addEventListener('click', function() {
     // Le restamos 1 a nuestro contador
     tarjetaActual = tarjetaActual - 1; 
 

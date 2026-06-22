@@ -3658,7 +3658,38 @@ $stat_mis_docs     = count(array_filter($mis_documentos, fn($d) => !empty($d)));
     </div>
     
     <script>
-       //  MOTOR DEL MENÚ LATERAL (CON INTELIGENCIA MÓVIL) 
+        // --- VALIDADOR GLOBAL DE TIPO DE ARCHIVO ---
+        function validarTipoArchivo(input, permitidos) {
+            if (!input.files || !input.files[0]) return true;
+            const nombre = input.files[0].name.toLowerCase();
+            const ext = nombre.substring(nombre.lastIndexOf('.'));
+            if (!permitidos.includes(ext)) {
+                alert('Formato no permitido (' + ext + '). Solo se aceptan: ' + permitidos.join(', '));
+                input.value = '';
+                return false;
+            }
+            return true;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('input[type="file"][accept]').forEach(function(input) {
+                const exts = input.getAttribute('accept').split(',').map(function(e) { return e.trim().toLowerCase(); });
+                input.addEventListener('change', function() { validarTipoArchivo(this, exts); });
+                var form = input.closest('form');
+                if (form && !form.dataset.fileValidado) {
+                    form.dataset.fileValidado = '1';
+                    form.addEventListener('submit', function(e) {
+                        var fileInput = this.querySelector('input[type="file"][accept]');
+                        if (fileInput && fileInput.files && fileInput.files[0]) {
+                            var extList = fileInput.getAttribute('accept').split(',').map(function(x) { return x.trim().toLowerCase(); });
+                            if (!validarTipoArchivo(fileInput, extList)) e.preventDefault();
+                        }
+                    });
+                }
+            });
+        });
+
+       //  MOTOR DEL MENÚ LATERAL (CON INTELIGENCIA MÓVIL)
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const logoText = document.getElementById('logo-text');

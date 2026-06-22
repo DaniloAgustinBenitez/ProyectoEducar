@@ -492,3 +492,15 @@ footer strong { color: white; }
     .logo-placeholder img{ height: 44px; }
     .tutor-card          { padding: 16px; }
 }
+
+/* --- ANIMACIÓN DE ENTRADA (Intersection Observer) --- */
+.oculto {
+    opacity: 0;
+    transform: translateY(100px);
+    transition: all 1s;
+}
+
+.mostrar {
+    opacity: 1;
+    transform: translateY(0px);
+}

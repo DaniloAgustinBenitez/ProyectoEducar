@@ -12,22 +12,113 @@
         <span class="s4"></span><span class="s5"></span><span class="s6"></span>
     </div>
 
+    <style>
+        nav ul { list-style: none; display: flex; gap: 20px; }
+        nav ul li a { text-decoration: none; color: white; font-weight: 600; font-size: 0.9rem; transition: color 0.3s; }
+        nav ul li a:hover { color: var(--celeste); }
+        .pasos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 22px; margin-bottom: 40px; }
+        .paso-card { background: white; padding: 30px 20px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.04); text-align: center; transition: transform 0.3s; }
+        .paso-card:hover { transform: translateY(-5px); }
+        .paso-card:nth-child(1) { border-top: 4px solid var(--verde); }
+        .paso-card:nth-child(2) { border-top: 4px solid var(--celeste); }
+        .paso-card:nth-child(3) { border-top: 4px solid var(--rosa); }
+        .paso-card .paso-icono { font-size: 2.5rem; margin-bottom: 12px; }
+        .paso-card h3 { color: #333; margin-bottom: 10px; font-size: 1.15rem; }
+        .paso-card p { color: #777; font-size: 0.9rem; line-height: 1.5; }
+        .niveles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+        @media (max-width: 768px) { .niveles-grid { grid-template-columns: 1fr; } }
+        .nivel-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 5px solid var(--azul-primario); }
+        .nivel-card h4 { color: var(--azul-primario); margin-bottom: 8px; font-size: 1.1rem; }
+        .nivel-card p { color: #666; font-size: 0.9rem; line-height: 1.5; margin: 0; }
+        .beneficios { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 40px; }
+        .beneficio-tag { background: #e8f4fd; color: var(--azul-primario); padding: 10px 18px; border-radius: 50px; font-size: 0.88rem; font-weight: 600; }
+        .separador-admision { text-align: center; margin: 40px 0 30px; }
+        .separador-admision h3 { color: var(--azul-primario); font-size: 1.4rem; margin-bottom: 8px; }
+        .separador-admision p { color: #888; font-size: 0.95rem; }
+        .fade-in {
+            opacity: 0;
+            transform: translateY(60px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+
     <header>
         <div class="logo-container">
             <img src="img/logo.png" alt="Logo Educar para Transformar">
             <h1>Educar para Transformar</h1>
         </div>
-        <a href="index.html" class="btn-volver">← Volver al inicio</a>
+        <nav>
+            <ul>
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="quienes-somos.html">Quiénes Somos</a></li>
+                <li><a href="contacto.html">Contacto</a></li>
+                <li><a href="ubicacion.html">Ubicación</a></li>
+                <li><a href="inscripcion.html">Admisiones</a></li>
+                <li><a href="empleo.html">Empleo</a></li>
+                <li><a href="ingresar.html">Ingresar</a></li>
+            </ul>
+        </nav>
     </header>
 
     <section class="page-hero">
         <div class="hero-badge">🤝 Admisiones 2027</div>
-        <h2><span>Solicitud de Entrevista</span></h2>
-        <p>Dejanos los datos básicos del aspirante y del tutor/a para coordinar una reunión presencial, conocer las instalaciones y el proyecto educativo.</p>
+        <h2><span>Sumate a nuestra comunidad educativa</span></h2>
+        <p>Creemos que la elección del colegio es una decisión familiar muy importante. Por eso, diseñamos un proceso de ingreso cercano, transparente y personalizado.</p>
     </section>
 
-    <main class="main-content">
-        <div class="form-card" style="max-width: 700px; margin: auto;">
+    <main class="main-content" style="max-width: 900px;">
+
+        <div class="pasos-grid fade-in">
+            <div class="paso-card">
+                <div class="paso-icono">📝</div>
+                <h3>1. Solicitar Entrevista</h3>
+                <p>Completá el formulario con tus datos de contacto básicos y el nivel de interés para el aspirante.</p>
+            </div>
+            <div class="paso-card">
+                <div class="paso-icono">🏫</div>
+                <h3>2. Conocer el Colegio</h3>
+                <p>Te invitamos a recorrer nuestras instalaciones y conversar sobre nuestro proyecto educativo.</p>
+            </div>
+            <div class="paso-card">
+                <div class="paso-icono">🎓</div>
+                <h3>3. Matriculación</h3>
+                <p>Confirmada la vacante, se habilita la entrega de documentación formal para asegurar el banco.</p>
+            </div>
+        </div>
+
+        <div class="niveles-grid fade-in">
+            <div class="nivel-card">
+                <h4>🧒 Nivel Inicial</h4>
+                <p>Salas de 2 a 5 años. Jornada extendida con talleres de arte, música y juego dirigido.</p>
+            </div>
+            <div class="nivel-card" style="border-left-color: var(--verde);">
+                <h4>📚 Nivel Primario</h4>
+                <p>De 1° a 6° grado. Inglés intensivo, robótica y deportes dentro del horario escolar.</p>
+            </div>
+            <div class="nivel-card" style="border-left-color: var(--rosa);">
+                <h4>🔬 Nivel Secundario</h4>
+                <p>De 1° a 5° año. Orientación en Ciencias Naturales y Sociales. Preparación universitaria.</p>
+            </div>
+        </div>
+
+        <div class="beneficios fade-in">
+            <span class="beneficio-tag">🌍 Idiomas: Inglés, Portugués y Francés</span>
+            <span class="beneficio-tag">🏊 Natación curricular</span>
+            <span class="beneficio-tag">🚌 Servicio de transporte</span>
+            <span class="beneficio-tag">🥗 Comedor escolar</span>
+            <span class="beneficio-tag">🩺 Enfermería permanente</span>
+        </div>
+
+        <div class="separador-admision fade-in">
+            <h3>¿Te interesa? Completá el formulario</h3>
+            <p>Nuestro equipo de admisiones se pondrá en contacto para coordinar una reunión.</p>
+        </div>
+
+        <div class="form-card fade-in" style="max-width: 700px; margin: auto;">
             
             <div class="form-header" style="background-color: #f0f4f8; padding: 20px; border-radius: 8px; margin-bottom: 25px; text-align: center;">
                 <h3 style="color: var(--azul-primario); margin: 0 0 10px 0;">Coordinar Reunión</h3>
@@ -99,6 +190,8 @@
                 </button>
             </form>
             
+            <div id="aviso-edad" style="display:none; background-color: #fff3cd; color: #856404; border: 1px solid #ffc107; border-radius: 8px; padding: 14px 18px; margin-top: 10px; font-size: 0.9rem; text-align: center;"></div>
+
             <script>
                 // Aviso de éxito al volver del PHP
                 const urlParams = new URLSearchParams(window.location.search);
@@ -110,10 +203,68 @@
                 const inputNac = document.getElementById('input-nacimiento-alumno');
                 if (inputNac) {
                     const hoy = new Date().toISOString().split("T")[0];
-                    inputNac.max = hoy; 
+                    inputNac.max = hoy;
                 }
+
+                // Validación de edad según nivel de interés
+                const rangosEdad = {
+                    'Nivel Inicial':     { min: 2,  max: 5,  label: 'Nivel Inicial (2 a 5 años)' },
+                    'Nivel Primario':    { min: 6,  max: 12, label: 'Nivel Primario (6 a 12 años)' },
+                    'Nivel Secundario':  { min: 13, max: 18, label: 'Nivel Secundario (13 a 18 años)' }
+                };
+
+                function calcularEdad(fechaNac) {
+                    const hoy = new Date();
+                    const nac = new Date(fechaNac);
+                    let edad = hoy.getFullYear() - nac.getFullYear();
+                    const mesDiff = hoy.getMonth() - nac.getMonth();
+                    if (mesDiff < 0 || (mesDiff === 0 && hoy.getDate() < nac.getDate())) edad--;
+                    return edad;
+                }
+
+                const formEntrevista = document.querySelector('form[action="procesos/procesar_entrevista.php"]');
+                const selectNivel = formEntrevista.querySelector('select[name="nivel"]');
+                const inputFechaNac = formEntrevista.querySelector('input[name="fecha_nacimiento_alumno"]');
+                const avisoEdad = document.getElementById('aviso-edad');
+
+                function validarEdadNivel() {
+                    avisoEdad.style.display = 'none';
+                    if (!inputFechaNac.value || !selectNivel.value) return true;
+
+                    const edad = calcularEdad(inputFechaNac.value);
+                    const rango = rangosEdad[selectNivel.value];
+                    if (!rango) return true;
+
+                    if (edad < rango.min || edad > rango.max) {
+                        avisoEdad.textContent = '⚠️ La edad del aspirante (' + edad + ' años) no corresponde con ' + rango.label + '. Verificá la fecha de nacimiento o el nivel seleccionado.';
+                        avisoEdad.style.display = 'block';
+                        return false;
+                    }
+                    return true;
+                }
+
+                selectNivel.addEventListener('change', validarEdadNivel);
+                inputFechaNac.addEventListener('change', validarEdadNivel);
+
+                formEntrevista.addEventListener('submit', function(e) {
+                    if (!validarEdadNivel()) {
+                        e.preventDefault();
+                    }
+                });
             </script>
         </div>
     </main>
+    <script>
+        setTimeout(function() {
+            document.querySelectorAll('.fade-in').forEach(function(el) {
+                var obs = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(e) {
+                        if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+                    });
+                }, { threshold: 0.1 });
+                obs.observe(el);
+            });
+        }, 100);
+    </script>
 </body>
 </html>

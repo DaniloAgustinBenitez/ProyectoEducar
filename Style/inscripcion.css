@@ -35,9 +35,9 @@ body {
 
 /* HEADER */
 header {
-    background-color: rgba(27,73,155,0.83);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
+    background-color: rgba(76, 178, 228, 0.75);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     position: fixed;
     top: 5px;
@@ -504,4 +504,63 @@ footer strong { color: white; }
 .mostrar {
     opacity: 1;
     transform: translateY(0px);
+}
+
+/* --- MENÚ MÓVIL (LOGO TOGGLE) --- */
+.btn-ingresar-mobile {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    header {
+        flex-wrap: wrap;
+        padding: 10px 5%;
+    }
+    .logo-container {
+        cursor: pointer;
+    }
+    .logo-container img, .logo-placeholder img {
+        height: 50px;
+    }
+    .logo-container h1 {
+        font-size: 1.1rem;
+    }
+    .btn-ingresar-mobile {
+        display: inline-block;
+        background-color: var(--verde);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 0.9rem;
+        transition: background-color 0.3s;
+        margin-left: auto;
+    }
+    .btn-ingresar-mobile:hover {
+        background-color: #7ab033;
+    }
+    nav {
+        width: 100%;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease;
+    }
+    nav.nav-abierto {
+        max-height: 400px;
+    }
+    nav ul {
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+        padding: 10px 0;
+    }
+    nav ul li a {
+        display: block;
+        padding: 12px 0;
+        font-size: 1.1rem;
+    }
+    nav ul li:last-child {
+        display: none;
+    }
 }

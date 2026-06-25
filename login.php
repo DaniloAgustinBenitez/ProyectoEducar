@@ -153,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </form>
 
         <div style="text-align: center; margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
-            <a href="ingresar.html" style="color: #888; text-decoration: none; font-size: 0.85rem; transition: color 0.3s;" onmouseover="this.style.color='var(--azul-primario)'" onmouseout="this.style.color='#888'">← Volver</a>
+            <a href="index.html" style="color: #888; text-decoration: none; font-size: 0.85rem; transition: color 0.3s;" onmouseover="this.style.color='var(--azul-primario)'" onmouseout="this.style.color='#888'">← Volver</a>
             <a href="#" id="link-olvido" style="color: var(--azul-primario); text-decoration: none; font-size: 0.85rem;">¿Olvidaste tu contraseña?</a>
         </div>
 

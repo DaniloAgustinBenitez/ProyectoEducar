@@ -57,7 +57,7 @@
 
 body {
     color: var(--texto-oscuro);
-    background-image: url('img/fondo-blanco.avif');
+    background-image: url('../img/fondo-blanco.avif');
     background-size: cover;
     background-attachment: fixed;
     background-repeat: no-repeat;
@@ -69,9 +69,9 @@ body {
 header {
     /* Leve transparencia y efecto blur en fondos compatibles */
     /* Fondo en azul institucional con 0.83 de opacidad (5% más transparente que antes) */
-    background-color: rgba(27,73,155,0.83);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
+    background-color: rgba(76, 178, 228, 0.75);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     position: fixed;
     top: 0;
@@ -156,7 +156,7 @@ h2 {
 /* --- SECCIÓN: HERO --- */
 #hero {
     height: 100vh;
-    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("img/colegio.jpg");
+    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("../img/colegio.jpg");
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -204,7 +204,7 @@ h2 {
 /* --- SECCIÓN: QUIÉNES SOMOS (PANTALLA DIVIDIDA) --- */
 
 #quienes-somos {
-    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("img/colegio2.jpg");
+    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("../img/colegio2.jpg");
     background-size: cover;
     transition: background-image 0.5s ease-in-out;
 }
@@ -647,7 +647,7 @@ h2 {
 
 #inscripcion {
     /* Le damos un fondo fotográfico con un filtro oscuro para que la tarjeta brille */
-    background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("img/colegio.jpg");
+    background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("../img/colegio.jpg");
     background-size: cover;
     background-position: center;
     background-attachment: fixed; /* Efecto parallax premium */

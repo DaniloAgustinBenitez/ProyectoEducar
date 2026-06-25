@@ -229,10 +229,9 @@ h2 {
 
 /* Ajustes para el texto de la izquierda */
 #quienes-somos h2 {
-    text-align: left;
-    margin-left: 0;
-    display: block;
-    color: white; /* Agregado para que se lea sobre la foto */
+    text-align: center;
+    display: inline-block;
+    color: var(--azul-primario);
 }
 
 .intro-text {
@@ -606,9 +605,22 @@ h2 {
     transform: translateY(0px);
 }
 
+/* Botón mobile de ingresar: oculto en desktop */
+.btn-ingresar-mobile { display: none; }
+
 /* --- RESPONSIVE (CELULARES Y TABLETS) --- */
 
 @media (max-width: 768px) {
+    .btn-ingresar-mobile {
+        display: inline-block;
+        background: var(--verde);
+        color: white;
+        text-decoration: none;
+        padding: 8px 18px;
+        border-radius: 50px;
+        font-weight: bold;
+        font-size: 0.85rem;
+    }
     header {
         flex-direction: column;
         padding: 15px;

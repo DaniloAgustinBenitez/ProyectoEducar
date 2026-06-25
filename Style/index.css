@@ -611,48 +611,98 @@ h2 {
 /* --- RESPONSIVE (CELULARES Y TABLETS) --- */
 
 @media (max-width: 768px) {
+    header {
+        flex-wrap: wrap;
+        padding: 10px 5%;
+    }
+    .logo-container {
+        cursor: pointer;
+    }
+    .logo-container img {
+        height: 50px;
+    }
+    .logo-container h1 {
+        font-size: 1.1rem;
+    }
     .btn-ingresar-mobile {
         display: inline-block;
-        background: var(--verde);
+        background-color: var(--verde);
         color: white;
-        text-decoration: none;
-        padding: 8px 18px;
+        padding: 8px 20px;
         border-radius: 50px;
+        text-decoration: none;
         font-weight: bold;
-        font-size: 0.85rem;
+        font-size: 0.9rem;
+        margin-left: auto;
     }
-    header {
-        flex-direction: column;
-        padding: 15px;
+    nav {
+        width: 100%;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease;
+    }
+    nav.nav-abierto {
+        max-height: 400px;
     }
     nav ul {
-        margin-top: 15px;
-        flex-wrap: wrap;
-        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+        padding: 10px 0;
     }
+    nav ul li a {
+        display: block;
+        padding: 12px 0;
+        font-size: 1.1rem;
+        color: white;
+    }
+    nav ul li:last-child {
+        display: none;
+    }
+
     .contact-container {
         flex-direction: column;
         align-items: center;
         text-align: center;
     }
-    
-/* ROMPEMOS LA PANTALLA DIVIDIDA EN CELULARES */
     .quienes-somos-split,
     .ubicacion-split {
-        flex-direction: column; /* Apila el contenido uno arriba del otro */
+        flex-direction: column;
         text-align: center;
     }
-    
     #quienes-somos h2, .intro-text {
-        text-align: center; /* Vuelve a centrar el texto en móviles */
+        text-align: center;
     }
-    
     .ubicacion-split .ubi,
     .ubicacion-split .card {
-        width: 100%; /* Hacemos que el mapa y su tarjeta ocupen todo el ancho */
+        width: 100%;
     }
+    .grid-info {
+        grid-template-columns: 1fr 1fr;
+    }
+    #hero h1 {
+        font-size: 1.4rem;
+        max-width: 90%;
+    }
+    .galeria-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .intro-bloque {
+        padding: 0 10px;
+    }
+    .galeria-seccion {
+        padding: 0 10px;
+    }
+}
 
-} /* <--- ¡ESTA ES LA LLAVE MÁGICA QUE CERRAMOS ANTES DE TIEMPO! */
+@media (max-width: 480px) {
+    .grid-info {
+        grid-template-columns: 1fr;
+    }
+    .galeria-grid {
+        grid-template-columns: 1fr;
+    }
+}
 
 
 /* --- SECCIÓN: INSCRIPCIÓN (Llamado a la Acción) --- */

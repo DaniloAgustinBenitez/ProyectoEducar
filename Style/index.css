@@ -607,6 +607,7 @@ h2 {
 
 /* Botón mobile de ingresar: oculto en desktop */
 .btn-ingresar-mobile { display: none; }
+.btn-hamburguesa { display: none; }
 
 /* --- RESPONSIVE (CELULARES Y TABLETS) --- */
 
@@ -634,6 +635,20 @@ h2 {
         font-weight: bold;
         font-size: 0.9rem;
         margin-left: auto;
+    }
+    .btn-hamburguesa {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        font-size: 1.6rem;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-left: 10px;
     }
     nav {
         width: 100%;

@@ -507,9 +507,8 @@ footer strong { color: white; }
 }
 
 /* --- MENÚ MÓVIL (LOGO TOGGLE) --- */
-.btn-ingresar-mobile {
-    display: none;
-}
+.btn-ingresar-mobile { display: none; }
+.btn-hamburguesa { display: none; }
 
 @media (max-width: 768px) {
     header {
@@ -539,6 +538,20 @@ footer strong { color: white; }
     }
     .btn-ingresar-mobile:hover {
         background-color: #7ab033;
+    }
+    .btn-hamburguesa {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        font-size: 1.6rem;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-left: 10px;
     }
     nav {
         width: 100%;
